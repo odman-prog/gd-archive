@@ -1,101 +1,158 @@
-import Image from "next/image";
+import Link from 'next/link'
+import { BookOpen, Users, Eye, Sparkles } from 'lucide-react'
+import { createClient } from '@/lib/supabase/server'
+import ContentCard from '@/components/ContentCard'
 
-export default function Home() {
+async function getStats(supabase: ReturnType<typeof createClient>) {
+  const [contents, profiles, views] = await Promise.all([
+    supabase.from('contents').select('id', { count: 'exact', head: true }),
+    supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('status', 'approved'),
+    supabase.from('contents').select('view_count'),
+  ])
+
+  const thisMonth = new Date()
+  thisMonth.setDate(1)
+  thisMonth.setHours(0, 0, 0, 0)
+  const { count: newThisMonth } = await supabase
+    .from('contents')
+    .select('id', { count: 'exact', head: true })
+    .gte('created_at', thisMonth.toISOString())
+
+  const totalViews = (views.data ?? []).reduce((sum, r) => sum + (r.view_count ?? 0), 0)
+
+  return {
+    contentCount: contents.count ?? 0,
+    studentCount: profiles.count ?? 0,
+    totalViews,
+    newThisMonth: newThisMonth ?? 0,
+  }
+}
+
+async function getFeatured(supabase: ReturnType<typeof createClient>) {
+  const { data } = await supabase
+    .from('contents')
+    .select('id, title, summary, category, view_count, like_count, created_at, profiles(name)')
+    .eq('featured', true)
+    .eq('status', 'published')
+    .order('created_at', { ascending: false })
+    .limit(3)
+  return data ?? []
+}
+
+async function getLatest(supabase: ReturnType<typeof createClient>) {
+  const { data } = await supabase
+    .from('contents')
+    .select('id, title, summary, category, view_count, like_count, created_at, profiles(name)')
+    .eq('status', 'published')
+    .order('created_at', { ascending: false })
+    .limit(6)
+  return data ?? []
+}
+
+export default async function Home() {
+  const supabase = createClient()
+  const [stats, featured, latest] = await Promise.all([
+    getStats(supabase),
+    getFeatured(supabase),
+    getLatest(supabase),
+  ])
+
+  const statCards = [
+    { icon: <BookOpen size={20} />, label: '전체 콘텐츠', value: stats.contentCount.toLocaleString() },
+    { icon: <Users size={20} />, label: '참여 학생', value: stats.studentCount.toLocaleString() },
+    { icon: <Eye size={20} />, label: '총 조회수', value: stats.totalViews.toLocaleString() },
+    { icon: <Sparkles size={20} />, label: '이번 달 신규', value: stats.newThisMonth.toLocaleString() },
+  ]
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+    <div>
+      {/* ── 히어로 ──────────────────────────────────────── */}
+      <section className="bg-gradient-to-br from-[#1B4332] via-[#2D6A4F] to-[#1B4332] text-[#FEFAE0] py-24 px-4">
+        <div className="max-w-3xl mx-auto text-center flex flex-col items-center gap-6">
+          <span className="text-5xl">📚</span>
+          <h1 className="text-4xl md:text-5xl font-bold tracking-tight leading-tight">
+            광덕아카이브
+          </h1>
+          <p className="text-lg md:text-xl text-[#FEFAE0]/70 max-w-xl leading-relaxed">
+            광덕고등학교 학생들의 생각이 모이고, 빛나는 곳
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-3 mt-2">
+            <Link
+              href="/archive"
+              className="px-6 py-3 rounded-full bg-[#D4A373] text-[#1B4332] font-semibold text-sm hover:bg-[#c49060] transition-colors"
+            >
+              아카이브 둘러보기
+            </Link>
+            <Link
+              href="/write"
+              className="px-6 py-3 rounded-full border border-[#FEFAE0]/40 text-[#FEFAE0] font-semibold text-sm hover:bg-[#FEFAE0]/10 transition-colors"
+            >
+              글 올리기
+            </Link>
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      </section>
+
+      {/* ── 통계 카드 ────────────────────────────────────── */}
+      <section className="max-w-6xl mx-auto px-4 -mt-8 relative z-10">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {statCards.map((card) => (
+            <div
+              key={card.label}
+              className="bg-white rounded-xl border border-[#1B4332]/10 shadow-sm p-5 flex flex-col gap-2"
+            >
+              <div className="text-[#D4A373]">{card.icon}</div>
+              <p className="text-2xl font-bold text-[#1B4332]">{card.value}</p>
+              <p className="text-xs text-[#1B4332]/50">{card.label}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ── 편집부 PICK ──────────────────────────────────── */}
+      <section className="max-w-6xl mx-auto px-4 mt-16">
+        <div className="flex items-center gap-2 mb-6">
+          <span className="text-[#D4A373] text-xl">✦</span>
+          <h2 className="text-xl font-bold text-[#1B4332]">편집부 PICK</h2>
+        </div>
+        {featured.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            {featured.map((item) => (
+              <ContentCard key={item.id} content={item as any} />
+            ))}
+          </div>
+        ) : (
+          <EmptyState message="아직 편집부가 선정한 글이 없습니다." />
+        )}
+      </section>
+
+      {/* ── 최신 글 ──────────────────────────────────────── */}
+      <section className="max-w-6xl mx-auto px-4 mt-16 mb-20">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-bold text-[#1B4332]">최신 글</h2>
+          <Link href="/archive" className="text-sm text-[#D4A373] hover:underline font-medium">
+            전체 보기 →
+          </Link>
+        </div>
+        {latest.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
+            {latest.map((item) => (
+              <ContentCard key={item.id} content={item as any} />
+            ))}
+          </div>
+        ) : (
+          <EmptyState message="아직 등록된 글이 없습니다. 첫 번째 글을 올려보세요!" />
+        )}
+      </section>
     </div>
-  );
+  )
+}
+
+function EmptyState({ message }: { message: string }) {
+  return (
+    <div className="py-16 flex flex-col items-center gap-3 text-[#1B4332]/40">
+      <span className="text-4xl">📭</span>
+      <p className="text-sm">{message}</p>
+    </div>
+  )
 }
