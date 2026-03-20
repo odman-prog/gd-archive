@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Search, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-import ContentCard, { type Content, CATEGORY_COLORS } from '@/components/ContentCard'
+import ContentCard, { type Content } from '@/components/ContentCard'
 
 const CATEGORIES = ['전체', '기사', '에세이', '인터뷰', '시/수필', '독서감상문', '수행평가']
 const SORTS = [
@@ -106,7 +106,6 @@ export default function ArchivePage() {
       <div className="flex flex-wrap gap-2 mb-4">
         {CATEGORIES.map((cat) => {
           const isActive = category === cat
-          const colorClass = cat !== '전체' ? CATEGORY_COLORS[cat] ?? '' : ''
           return (
             <button
               key={cat}

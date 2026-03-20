@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { useDropzone } from 'react-dropzone'
+import { useDropzone, FileRejection } from 'react-dropzone'
 import { createClient } from '@/lib/supabase/client'
 import { Upload, X, FileText, CheckCircle2, Loader2, Save, Send } from 'lucide-react'
 
@@ -41,7 +41,7 @@ export default function WriteForm({ userId }: { userId: string }) {
   const [error, setError] = useState('')
 
   // ── Dropzone ─────────────────────────────────────
-  const onDrop = useCallback((accepted: File[], rejected: { file: File; errors: { message: string }[] }[]) => {
+  const onDrop = useCallback((accepted: File[], rejected: FileRejection[]) => {
     if (rejected.length > 0) {
       const msg = rejected[0].errors[0]?.message ?? '파일 오류'
       setError(msg.includes('size') ? '파일 크기는 최대 20MB입니다.' : '허용되지 않는 파일 형식입니다.')

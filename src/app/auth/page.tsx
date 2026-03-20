@@ -8,7 +8,7 @@ import { Eye, EyeOff, Loader2 } from 'lucide-react'
 type Tab = 'login' | 'signup'
 
 function toEmail(studentId: string) {
-  return `${studentId}@gd-archive.school`
+  return `${studentId}@gd-archive.internal`
 }
 
 export default function AuthPage() {
@@ -77,46 +77,18 @@ export default function AuthPage() {
 
     setLoading(true)
 
-    // 중복 학번 체크
-    const { data: existing } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('student_id', studentId)
-      .maybeSingle()
-
-    if (existing) {
-      setError('이미 가입된 학번입니다.')
-      setLoading(false)
-      return
-    }
-
-    // Supabase Auth 계정 생성
-    const { data, error: signUpError } = await supabase.auth.signUp({
-      email: toEmail(studentId),
-      password,
+    // 서버 API Route를 통해 계정 생성 (이메일 확인 없음)
+    const res = await fetch('/api/auth/signup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, studentId, grade, classNum, number, password }),
     })
 
-    if (signUpError || !data.user) {
-      setError('회원가입 중 오류가 발생했습니다. 다시 시도해주세요.')
-      setLoading(false)
-      return
-    }
-
-    // profiles 테이블에 저장
-    const { error: profileError } = await supabase.from('profiles').insert({
-      id: data.user.id,
-      name,
-      student_id: studentId,
-      grade: Number(grade),
-      class_num: Number(classNum),
-      number: Number(number),
-      status: 'pending',
-    })
-
+    const result = await res.json()
     setLoading(false)
 
-    if (profileError) {
-      setError('프로필 저장 중 오류가 발생했습니다.')
+    if (!res.ok) {
+      setError(result.error ?? '회원가입 중 오류가 발생했습니다.')
       return
     }
 

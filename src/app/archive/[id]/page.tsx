@@ -63,7 +63,7 @@ export default async function ContentDetailPage({ params }: { params: { id: stri
     })
   )
 
-  const profile = content.profiles as { name: string; grade?: number | null; class_num?: number | null } | null
+  const profile = content.profiles as unknown as { name: string; grade?: number | null; class_num?: number | null } | null
   const categoryColor = CATEGORY_COLORS[content.category ?? ''] ?? CATEGORY_COLORS['기타']
   const authorLabel = profile
     ? [profile.name, profile.grade && profile.class_num ? `${profile.grade}학년 ${profile.class_num}반` : null]

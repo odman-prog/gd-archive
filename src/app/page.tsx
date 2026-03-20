@@ -118,6 +118,7 @@ export default async function Home() {
         {featured.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {featured.map((item) => (
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               <ContentCard key={item.id} content={item as any} />
             ))}
           </div>
@@ -137,6 +138,7 @@ export default async function Home() {
         {latest.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
             {latest.map((item) => (
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               <ContentCard key={item.id} content={item as any} />
             ))}
           </div>
