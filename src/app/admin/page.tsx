@@ -53,24 +53,17 @@ export default async function AdminPage() {
   ])
 
   return (
-    <div className="max-w-5xl mx-auto px-6 py-12">
-      <div className="mb-10 pb-6 border-b border-primary/10">
-        <p className="text-[10px] font-bold uppercase tracking-widest text-secondary mb-2">Admin</p>
-        <h1 className="text-3xl font-serif font-bold text-primary">관리자 페이지</h1>
-        <p className="text-sm text-primary/45 mt-1 font-sans">{profile.name} 선생님</p>
-      </div>
-
-      <AdminClient
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        initialPending={(pendingProfiles ?? []) as any}
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        initialUsers={(allUsers ?? []) as any}
-        initialStats={{
-          total: totalUsers ?? 0,
-          active: activeUsers ?? 0,
-          monthlyUploads: monthlyUploads ?? 0,
-        }}
-      />
-    </div>
+    <AdminClient
+      teacherName={profile.name}
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      initialPending={(pendingProfiles ?? []) as any}
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      initialUsers={(allUsers ?? []) as any}
+      initialStats={{
+        total: totalUsers ?? 0,
+        active: activeUsers ?? 0,
+        monthlyUploads: monthlyUploads ?? 0,
+      }}
+    />
   )
 }

@@ -66,16 +66,10 @@ export default function Header() {
       <div className="max-w-screen-2xl mx-auto px-8 h-20 flex justify-between items-center">
 
         {/* 로고 */}
-        <Link href="/" className="flex items-center gap-1.5 group">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
+        <Link href="/" className="flex items-center group">
           <span className="text-2xl font-black font-serif italic text-primary tracking-tight" style={{ lineHeight: 1 }}>
             광덕아카이브
           </span>
-          <img
-            src="https://i.namu.wiki/i/JAXf6XU-jFjqtTnc_85SXSQDXCviDcMEvOXcWawSzMuzsHNWC2SnlPVbj4tYBsJYvKy30_aM-aOmg7lyq1XBd-6Pyh4i9RWtz9_I6c9H_xcpgY8De0IGEcwbWwH3W7u9GWxz5lHXxk0RHWncvTlsmA.svg"
-            alt="광덕고 로고"
-            style={{ height: '1.4rem', width: 'auto', alignSelf: 'flex-end' }}
-          />
         </Link>
 
         {/* 데스크탑 네비게이션 */}
