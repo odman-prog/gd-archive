@@ -72,7 +72,8 @@ export default async function Home() {
           <img
             src="/hero-archive.png"
             alt=""
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover object-top"
+            style={{ height: 'calc(100% - 8px)', marginBottom: '-8px' }}
           />
           <div className="absolute inset-0 bg-gradient-to-r from-primary/90 via-primary/60 to-transparent" />
         </div>
@@ -252,24 +253,14 @@ export default async function Home() {
                     className="w-full h-full object-cover hover:scale-105 transition-transform duration-700"
                   />
                 </div>
-                {/* 오른쪽 (2/5): 위 hero-logo + 아래 인용 카드 */}
-                <div className="col-span-2 flex flex-col gap-4">
-                  {/* 로고 카드 */}
-                  <div className="flex-1 rounded-2xl bg-primary flex items-center justify-center p-8 shadow-xl">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src="/hero-logo.png"
-                      alt="광덕고등학교"
-                      className="w-full max-w-[140px] object-contain opacity-90"
-                    />
-                  </div>
-                  {/* 인용 카드 */}
-                  <div className="rounded-2xl bg-secondary-container px-6 py-5 shadow-sm">
-                    <span className="material-symbols-outlined text-on-secondary-container text-[20px] mb-2 block" style={{ fontVariationSettings: "'FILL' 1" }}>format_quote</span>
-                    <p className="font-serif italic text-on-secondary-container text-sm leading-relaxed">
-                      기록이 곧<br />지성이다
-                    </p>
-                  </div>
+                {/* 오른쪽 (2/5): hero-logo 전체 채움 */}
+                <div className="col-span-2 rounded-2xl overflow-hidden shadow-xl">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src="/hero-logo.png"
+                    alt="광덕고등학교"
+                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-700"
+                  />
                 </div>
               </div>
             </div>
