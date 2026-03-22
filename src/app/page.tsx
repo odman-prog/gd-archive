@@ -4,7 +4,6 @@ import { ko } from 'date-fns/locale'
 import { createClient } from '@/lib/supabase/server'
 import ContentCard from '@/components/ContentCard'
 
-
 async function getStats(supabase: ReturnType<typeof createClient>) {
   const [contents, profiles] = await Promise.all([
     supabase.from('contents').select('id', { count: 'exact', head: true }).eq('status', 'published'),
@@ -35,7 +34,7 @@ async function getContentList(supabase: ReturnType<typeof createClient>, feature
 
   if (uniqueIds.length > 0) {
     const { data: pd } = await supabase.from('profiles').select('id, name').in('id', uniqueIds)
-      ; (pd ?? []).forEach((p) => { profileMap[p.id] = { name: p.name } })
+    ;(pd ?? []).forEach((p) => { profileMap[p.id] = { name: p.name } })
   }
 
   return data.map((c) => ({
@@ -60,200 +59,178 @@ export default async function Home() {
     (item) => item.id !== mainFeatured?.id && item.id !== secondaryFeatured?.id
   )
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const latestDispatch = excluded.slice(0, 2) as any[]
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const moreItems = excluded.slice(2, 6) as any[]
+  const moreItems = excluded.slice(0, 4) as any[]
 
   return (
     <div>
 
       {/* ── 히어로 섹션 ────────────────────────────── */}
-      <section className="relative min-h-[70vh] flex flex-col justify-center overflow-hidden bg-primary text-cream pt-20">
-        {/* 배경: 피처드 이미지 또는 기본 프리미엄 이미지 */}
-        <div className="absolute inset-0 opacity-40">
-          {mainFeatured?.cover_image_url && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={mainFeatured.cover_image_url}
-              alt=""
-              className="w-full h-full object-cover"
-            />
-          )}
-          <div className="absolute inset-0 bg-gradient-to-t from-surface via-primary/50 to-primary/20" />
+      <section className="relative h-[870px] min-h-[600px] flex items-center overflow-hidden">
+        {/* 배경 이미지 */}
+        <div className="absolute inset-0 z-0">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/hero-archive.png"
+            alt=""
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/90 via-primary/60 to-transparent" />
         </div>
 
-        <div className="relative z-10 max-w-screen-2xl mx-auto px-8 w-full mt-10 mb-16">
+        <div className="relative z-10 w-full max-w-screen-2xl mx-auto px-8 md:px-16">
           <div className="max-w-3xl">
-            <span className="inline-block px-4 py-1.5 bg-secondary-container text-on-secondary-container font-sans text-xs tracking-widest uppercase rounded-full mb-6 shadow-sm">
+            <span className="font-sans text-secondary text-sm tracking-[0.2em] uppercase mb-4 block">
               광덕고등학교 교지편집부
             </span>
-            <h1 className="text-5xl md:text-7xl lg:text-8xl font-serif font-bold leading-[1.1] mb-6 tracking-tight drop-shadow-lg">
-              The Editorial<br />
-              <span className="italic font-normal">Archive</span>
+            <h1 className="font-serif italic text-6xl md:text-8xl text-cream font-light leading-tight mb-6">
+              The Editorial Archive
             </h1>
-            <p className="text-xl md:text-2xl font-serif text-cream/90 mb-10 max-w-xl italic drop-shadow-md">
+            <p className="font-serif text-2xl md:text-3xl text-surface-container-low mb-12 opacity-90 italic">
               기록이 지성이 되는 공간
             </p>
-
-            {/* 검색 바 */}
-            <div className="max-w-2xl bg-surface/10 backdrop-blur-md border border-cream/20 rounded-full p-2 flex items-center shadow-2xl mb-8 transition-colors focus-within:bg-surface/20 focus-within:border-cream/40">
-              <span className="material-symbols-outlined text-cream/70 ml-4">search</span>
-              <form action="/archive" method="get" className="flex-1 flex">
-                <input
-                  type="text"
-                  name="q"
-                  placeholder="제목이나 키워드로 아카이브 검색..."
-                  className="w-full bg-transparent border-none text-cream placeholder-cream/50 px-4 py-3 focus:outline-none font-sans text-lg"
-                />
-                <button type="submit" className="px-8 py-3 bg-cream text-primary font-bold rounded-full hover:bg-cream/90 transition-colors">
-                  검색
-                </button>
-              </form>
-            </div>
-
-            <div className="flex flex-wrap gap-4">
+            <div className="flex flex-wrap gap-6">
+              <Link
+                href="/archive"
+                className="px-10 py-4 bg-primary-container text-cream rounded-lg font-serif text-lg hover:bg-secondary hover:text-cream transition-all duration-500 flex items-center gap-3 group shadow-xl"
+              >
+                아카이브 탐색
+                <span className="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
+              </Link>
               <Link
                 href="/write"
-                className="px-8 py-4 bg-transparent border border-cream/30 text-cream font-serif text-lg rounded-full hover:bg-cream/10 transition-all backdrop-blur-sm"
+                className="px-10 py-4 border border-cream/20 text-cream rounded-lg font-sans text-sm tracking-widest uppercase hover:bg-cream/10 transition-all"
               >
-                기록 남기기
+                글 올리기
               </Link>
             </div>
           </div>
         </div>
 
-        {/* 퀵 카테고리 네비게이션 */}
-        <div className="relative z-10 w-full bg-surface-container-low/80 backdrop-blur-md border-t border-cream/10 mt-auto">
-          <div className="max-w-screen-2xl mx-auto px-8 py-6 flex flex-wrap gap-4 md:gap-12 justify-center md:justify-start">
-            {[
-              { label: '기사', icon: 'news' },
-              { label: '에세이', icon: 'edit_document' },
-              { label: '인터뷰', icon: 'mic' },
-              { label: '시/수필', icon: 'menu_book' },
-              { label: '독서감상문', icon: 'auto_stories' },
-            ].map(cat => (
-              <Link key={cat.label} href={`/archive?category=${cat.label}`} className="flex items-center gap-2.5 text-cream/70 hover:text-secondary transition-colors group">
-                <span className="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">{cat.icon}</span>
-                <span className="font-sans font-medium">{cat.label}</span>
-              </Link>
-            ))}
+        {/* 우측 하단 피처드 표시 */}
+        {mainFeatured && (
+          <div className="absolute bottom-12 right-8 text-right hidden md:block">
+            <p className="font-sans text-xs uppercase tracking-widest text-cream/40 mb-2">Featured Publication</p>
+            <p className="font-serif italic text-lg text-cream/70 line-clamp-1 max-w-xs">{mainFeatured.title}</p>
           </div>
-        </div>
+        )}
       </section>
 
       {/* ── 에디터스 초이스 ──────────────────────────── */}
       <section className="py-24 bg-surface">
         <div className="max-w-screen-2xl mx-auto px-8">
-          <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-4">
-            <div className="max-w-xl">
-              <span className="text-secondary font-sans text-sm uppercase tracking-[0.2em] mb-4 block">Curated Selection</span>
-              <h2 className="text-4xl md:text-5xl font-serif font-bold text-primary italic">Editor&apos;s Choice</h2>
+          <div className="flex justify-between items-end mb-16">
+            <div>
+              <span className="text-secondary font-sans text-xs tracking-[0.3em] uppercase mb-2 block">Curation</span>
+              <h2 className="font-serif text-4xl md:text-5xl text-primary font-bold">Editor&apos;s Choice</h2>
             </div>
-            <Link href="/archive" className="text-primary font-sans text-sm font-bold border-b border-primary/20 pb-1 hover:border-primary transition-all">
+            <Link href="/archive" className="text-primary font-sans text-sm font-bold border-b border-primary/20 pb-1 hover:border-secondary transition-all">
               전체 글 보기
             </Link>
           </div>
 
           {(mainFeatured || secondaryFeatured) ? (
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-8 lg:gap-12">
 
-              {/* 메인 피처 (7/12) */}
+              {/* 메인 피처 (8/12) */}
               {mainFeatured && (
-                <Link href={`/archive/${mainFeatured.id}`} className="md:col-span-7 group cursor-pointer">
-                  <div className="relative aspect-[16/10] overflow-hidden rounded-xl bg-surface-container-low mb-6">
+                <Link href={`/archive/${mainFeatured.id}`} className="md:col-span-8 group cursor-pointer">
+                  <div className="relative overflow-hidden rounded-xl aspect-[16/9] mb-8 bg-surface-container-low">
                     {mainFeatured.cover_image_url ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
                         src={mainFeatured.cover_image_url}
                         alt={mainFeatured.title}
-                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                        className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
                       />
                     ) : (
-                      <div className="w-full h-full bg-gradient-to-br from-primary-container to-primary" />
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src="/hero-document.png"
+                        alt="featured article"
+                        className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
+                      />
                     )}
                     {mainFeatured.category && (
                       <div className="absolute top-6 left-6">
-                        <span className="px-3 py-1 bg-primary text-cream font-sans text-[10px] tracking-widest uppercase rounded">
+                        <span className="px-4 py-1.5 bg-secondary-container text-on-secondary-container text-[10px] font-sans font-bold tracking-widest uppercase rounded-full">
                           {mainFeatured.category}
                         </span>
                       </div>
                     )}
                   </div>
-                  <div>
+                  <div className="max-w-2xl">
                     {mainFeatured.profiles && (
                       <p className="text-secondary font-sans text-xs uppercase tracking-widest mb-3">
                         {mainFeatured.profiles.name} · {format(new Date(mainFeatured.created_at), 'yyyy년 M월 d일', { locale: ko })}
                       </p>
                     )}
-                    <h3 className="text-3xl font-serif font-bold text-primary mb-4 leading-snug group-hover:text-secondary transition-colors">
+                    <h3 className="font-serif text-4xl text-primary mb-4 leading-snug group-hover:text-secondary transition-colors">
                       {mainFeatured.title}
                     </h3>
                     {mainFeatured.summary && (
-                      <p className="text-on-surface/70 leading-relaxed max-w-2xl line-clamp-3 font-sans">
+                      <p className="text-on-surface-variant font-sans leading-relaxed text-lg mb-6 line-clamp-2">
                         {mainFeatured.summary}
                       </p>
                     )}
+                    <div className="flex items-center gap-4 text-sm font-sans text-on-surface-variant/60">
+                      <span>{mainFeatured.category ?? 'Editorial'}</span>
+                      <span className="w-1 h-1 bg-outline-variant rounded-full" />
+                      <span>{mainFeatured.view_count ?? 0} views</span>
+                    </div>
                   </div>
                 </Link>
               )}
 
-              {/* 사이드 (5/12) */}
-              <div className="md:col-span-5 flex flex-col gap-10">
+              {/* 사이드바 (4/12) */}
+              <div className="md:col-span-4 flex flex-col gap-12">
 
                 {/* 세컨더리 피처 */}
                 {secondaryFeatured && (
                   <Link href={`/archive/${secondaryFeatured.id}`} className="group cursor-pointer">
-                    <div className="relative overflow-hidden rounded-xl bg-surface-container-low mb-6 max-h-64 aspect-[4/3] bg-primary">
+                    <div className="aspect-[4/3] overflow-hidden rounded-xl mb-6 bg-surface-container-low">
                       {secondaryFeatured.cover_image_url ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
                           src={secondaryFeatured.cover_image_url}
                           alt={secondaryFeatured.title}
-                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                          className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
                         />
                       ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-primary-container to-primary" />
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src="/hero-archive.png"
+                          alt="secondary featured"
+                          className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
+                        />
                       )}
                     </div>
-                    <div>
-                      <span className="text-secondary font-sans text-xs uppercase tracking-widest mb-2 block">이달의 추천</span>
-                      <h3 className="text-2xl font-serif font-semibold text-primary mb-2 group-hover:text-secondary transition-colors line-clamp-2">
-                        {secondaryFeatured.title}
-                      </h3>
-                      {secondaryFeatured.summary && (
-                        <p className="text-on-surface/70 text-sm leading-relaxed line-clamp-2 font-sans">
-                          {secondaryFeatured.summary}
-                        </p>
-                      )}
-                    </div>
+                    {secondaryFeatured.category && (
+                      <span className="text-secondary font-sans text-[10px] tracking-widest uppercase mb-2 block font-bold">
+                        {secondaryFeatured.category}
+                      </span>
+                    )}
+                    <h4 className="font-serif text-2xl text-primary mb-3 leading-snug group-hover:text-secondary transition-colors">
+                      {secondaryFeatured.title}
+                    </h4>
+                    {secondaryFeatured.summary && (
+                      <p className="text-on-surface-variant font-sans text-sm line-clamp-2 leading-relaxed">
+                        {secondaryFeatured.summary}
+                      </p>
+                    )}
                   </Link>
                 )}
 
-                {/* 최신 디스패치 리스트 */}
-                {latestDispatch.length > 0 && (
-                  <div className="bg-surface-container-low shadow-sm p-8 rounded-xl border border-secondary/20 relative overflow-hidden group hover:border-secondary transition-colors">
-                    <div className="absolute right-0 top-0 w-32 h-32 bg-secondary/10 rounded-full blur-3xl -translate-y-12 translate-x-12 group-hover:bg-secondary/20 transition-colors" />
-                    <h4 className="font-serif italic text-xl text-primary mb-6 flex items-center gap-2">
-                      <span className="material-symbols-outlined text-[20px] text-secondary">schedule</span>최신 글
-                    </h4>
-                    <ul className="space-y-5 -mr-4 pr-4">
-                      {latestDispatch.map((item) => (
-                        <li key={item.id} className="group/item">
-                          <Link href={`/archive/${item.id}`} className="flex flex-col gap-1.5 border-b border-primary/10 pb-4">
-                            <div className="flex items-center gap-2">
-                              {item.category && (
-                                <span className="text-[10px] font-sans font-bold uppercase tracking-widest text-secondary bg-secondary/10 px-2 py-0.5 rounded">{item.category}</span>
-                              )}
-                              <span className="text-[10px] font-sans text-primary/40">{ko ? format(new Date(item.created_at), 'M.d') : ''}</span>
-                            </div>
-                            <p className="font-serif font-bold text-primary group-hover/item:text-secondary transition-colors line-clamp-2 md:line-clamp-1">{item.title}</p>
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
-                    <Link href="/archive" className="mt-5 text-xs font-bold font-sans text-secondary hover:underline flex items-center gap-1">전체보기 <span className="material-symbols-outlined text-[14px]">chevron_right</span></Link>
+                {/* 큐레이터 노트 */}
+                <div className="p-8 bg-surface-container-low rounded-xl border-l-4 border-secondary">
+                  <span className="material-symbols-outlined text-secondary mb-4 block">format_quote</span>
+                  <p className="font-serif italic text-xl text-primary mb-6 leading-relaxed">
+                    &ldquo;기록되지 않은 역사는 기억되지 않는다. 우리의 문장은 시대를 비추는 거울이 되어야 한다.&rdquo;
+                  </p>
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-px bg-secondary/30" />
+                    <span className="font-sans text-xs uppercase tracking-widest font-bold text-on-surface">Curator&apos;s Note</span>
                   </div>
-                )}
+                </div>
               </div>
             </div>
           ) : (
@@ -265,38 +242,92 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* ── 통계 스트립 ────────────────────────────── */}
-      <div className="bg-surface-container-low border-t border-outline-variant/20">
-        <div className="max-w-screen-2xl mx-auto px-8 py-10">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            {[
-              { label: '발행된 글', value: stats.contentCount.toLocaleString(), icon: 'article' },
-              { label: '참여 학생', value: stats.studentCount.toLocaleString(), icon: 'group' },
-              { label: '카테고리', value: '6', icon: 'category' },
-              { label: '창간 연도', value: '2024', icon: 'history_edu' },
-            ].map((s) => (
-              <div key={s.label} className="flex items-center gap-4">
-                <span className="material-symbols-outlined text-secondary text-[28px]">{s.icon}</span>
-                <div>
-                  <div className="font-serif text-3xl font-bold text-primary">{s.value}</div>
-                  <div className="text-[10px] font-bold tracking-widest uppercase text-primary/40 font-sans mt-0.5">{s.label}</div>
+      {/* ── 아카이브 가치 섹션 ────────────────────────── */}
+      <section className="py-24 bg-surface-container-low">
+        <div className="max-w-screen-2xl mx-auto px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
+
+            {/* 스태거드 이미지 그리드 */}
+            <div className="order-2 lg:order-1">
+              <div className="grid grid-cols-2 gap-6">
+                {/* 왼쪽 열 */}
+                <div className="space-y-6 pt-12">
+                  <div className="aspect-[3/4] rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src="/hero-archive.png" alt="아카이브 공간" className="w-full h-full object-cover" />
+                  </div>
+                  <div className="aspect-square rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src="/hero-document.png" alt="기록 문서" className="w-full h-full object-cover" />
+                  </div>
+                </div>
+                {/* 오른쪽 열 */}
+                <div className="space-y-6">
+                  <div className="aspect-square rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src="/hero-document.png" alt="문서 기록" className="w-full h-full object-cover" />
+                  </div>
+                  <div className="aspect-[3/4] rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src="/hero-archive.png" alt="아카이브" className="w-full h-full object-cover" />
+                  </div>
                 </div>
               </div>
-            ))}
+            </div>
+
+            {/* 텍스트 */}
+            <div className="order-1 lg:order-2">
+              <span className="text-secondary font-sans text-xs tracking-[0.3em] uppercase mb-4 block">Archive Values</span>
+              <h2 className="font-serif text-5xl md:text-6xl text-primary font-bold mb-8 leading-tight">
+                Heritage in<br />Every Stroke.
+              </h2>
+              <p className="text-on-surface-variant font-sans text-lg mb-10 leading-relaxed max-w-lg">
+                광덕 아카이브는 단순한 문서 보관소를 넘어, 학생들의 사유가 정제되어 기록으로 남는 지성의 전당입니다. 우리는 모든 창작물에 깃든 가치를 존중하며 이를 가장 품격 있게 큐레이팅합니다.
+              </p>
+              <ul className="space-y-6 mb-12">
+                <li className="flex items-start gap-4">
+                  <span className="material-symbols-outlined text-secondary mt-1">history_edu</span>
+                  <div>
+                    <h5 className="font-serif text-xl text-primary">지속 가능한 기록</h5>
+                    <p className="text-on-surface-variant text-sm mt-1">세대를 넘어 이어지는 광덕만의 고유한 서사적 유산</p>
+                  </div>
+                </li>
+                <li className="flex items-start gap-4">
+                  <span className="material-symbols-outlined text-secondary mt-1">auto_awesome</span>
+                  <div>
+                    <h5 className="font-serif text-xl text-primary">엄격한 큐레이션</h5>
+                    <p className="text-on-surface-variant text-sm mt-1">편집위원회에 의해 엄선된 수준 높은 학술 및 예술 콘텐츠</p>
+                  </div>
+                </li>
+                <li className="flex items-start gap-4">
+                  <span className="material-symbols-outlined text-secondary mt-1">group</span>
+                  <div>
+                    <h5 className="font-serif text-xl text-primary">통계</h5>
+                    <p className="text-on-surface-variant text-sm mt-1">
+                      {stats.contentCount}편의 글 · {stats.studentCount}명의 참여 학생
+                    </p>
+                  </div>
+                </li>
+              </ul>
+              <Link href="/archive" className="font-sans text-sm font-bold text-primary flex items-center gap-2 group">
+                아카이브 전체 보기
+                <span className="material-symbols-outlined group-hover:translate-x-2 transition-transform">trending_flat</span>
+              </Link>
+            </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* ── 더 읽어보기 그리드 ───────────────────────── */}
+      {/* ── 더 읽어보기 ────────────────────────────── */}
       {moreItems.length > 0 && (
         <section className="py-24 bg-surface">
           <div className="max-w-screen-2xl mx-auto px-8">
-            <div className="flex items-end justify-between mb-10">
+            <div className="flex items-end justify-between mb-12">
               <div>
-                <span className="text-secondary font-sans text-sm uppercase tracking-[0.2em] mb-2 block">Archive</span>
-                <h2 className="text-3xl md:text-4xl font-serif font-bold text-primary italic">더 읽어보기</h2>
+                <span className="text-secondary font-sans text-xs tracking-[0.3em] uppercase mb-2 block">Archive</span>
+                <h2 className="font-serif text-4xl text-primary font-bold">더 읽어보기</h2>
               </div>
-              <Link href="/archive" className="text-primary font-sans text-sm font-bold border-b border-primary/20 pb-1 hover:border-primary transition-all">
+              <Link href="/archive" className="text-primary font-sans text-sm font-bold border-b border-primary/20 pb-1 hover:border-secondary transition-all">
                 전체 보기
               </Link>
             </div>
@@ -310,26 +341,24 @@ export default async function Home() {
       )}
 
       {/* ── 최종 CTA ──────────────────────────────── */}
-      <section className="py-32 bg-primary text-cream relative overflow-hidden flex items-center justify-center">
-
-        <div className="max-w-4xl mx-auto px-8 text-center relative z-10 backdrop-blur-sm bg-primary/20 py-16 px-6 rounded-3xl border border-cream/10 shadow-2xl">
-          <h2 className="text-4xl md:text-6xl font-serif italic mb-10 leading-tight drop-shadow-md">
+      <section className="py-32 bg-primary text-cream relative overflow-hidden">
+        <div className="max-w-4xl mx-auto px-8 text-center relative z-10">
+          <h2 className="font-serif italic text-4xl md:text-6xl mb-10 leading-tight">
             기록으로 남기고,<br />지성으로 이어지다.
           </h2>
-          <div className="h-px w-24 bg-secondary/60 mx-auto mb-10" />
-          <p className="text-lg md:text-xl font-serif text-cream/80 max-w-2xl mx-auto mb-12 italic drop-shadow">
+          <div className="h-px w-24 bg-secondary/40 mx-auto mb-10" />
+          <p className="text-lg md:text-xl font-serif text-cream/60 max-w-2xl mx-auto mb-12 italic">
             광덕아카이브는 단순한 데이터베이스가 아닙니다.<br />
             광덕고등학교의 지적 여정이 살아 숨쉬는 공간입니다.
           </p>
-          <div className="flex gap-4 justify-center">
-            <Link
-              href="/archive"
-              className="inline-flex items-center gap-2 px-10 py-5 bg-cream text-primary font-sans font-bold uppercase tracking-[0.2em] text-sm rounded-full hover:bg-cream/90 transition-colors shadow-lg"
-            >
-              <span className="material-symbols-outlined text-[18px]">explore</span>
-              아카이브 입장
-            </Link>
-          </div>
+          <Link
+            href="/archive"
+            className="inline-flex items-center gap-2 px-12 py-5 bg-surface text-primary font-sans font-bold uppercase tracking-[0.2em] text-sm rounded-full hover:bg-secondary-container transition-colors"
+            style={{ boxShadow: '0 12px 32px -4px rgba(28,28,21,0.06)' }}
+          >
+            <span className="material-symbols-outlined text-[18px]">explore</span>
+            아카이브 입장
+          </Link>
         </div>
       </section>
 
