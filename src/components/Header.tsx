@@ -66,9 +66,7 @@ export default function Header() {
       <div className="max-w-screen-2xl mx-auto px-8 h-20 flex justify-between items-center">
 
         {/* 로고 */}
-        <Link href="/" className="flex items-center gap-3 group">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/hero-logo.png" alt="광덕고 로고" className="w-9 h-9 object-contain" />
+        <Link href="/" className="flex items-center group">
           <span className="text-2xl font-black font-serif italic text-primary tracking-tight" style={{ lineHeight: 1 }}>
             광덕아카이브
           </span>

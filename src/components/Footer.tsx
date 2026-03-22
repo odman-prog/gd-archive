@@ -8,7 +8,7 @@ export default function Footer() {
         <div className="flex flex-col items-center md:items-start gap-3">
           <span className="font-serif text-lg italic text-secondary">Gwangdeok Archive</span>
           <p className="font-sans text-sm tracking-wide uppercase text-cream/60">
-            광덕고등학교 국어과 교지편집부
+            광덕고등학교 국어과 조일웅
           </p>
         </div>
 

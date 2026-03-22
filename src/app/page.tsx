@@ -106,13 +106,6 @@ export default async function Home() {
           </div>
         </div>
 
-        {/* 우측 하단 피처드 표시 */}
-        {mainFeatured && (
-          <div className="absolute bottom-12 right-8 text-right hidden md:block">
-            <p className="font-sans text-xs uppercase tracking-widest text-cream/40 mb-2">Featured Publication</p>
-            <p className="font-serif italic text-lg text-cream/70 line-clamp-1 max-w-xs">{mainFeatured.title}</p>
-          </div>
-        )}
       </section>
 
       {/* ── 에디터스 초이스 ──────────────────────────── */}
@@ -247,29 +240,26 @@ export default async function Home() {
         <div className="max-w-screen-2xl mx-auto px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
 
-            {/* 스태거드 이미지 그리드 */}
+            {/* 비대칭 2-이미지 레이아웃 */}
             <div className="order-2 lg:order-1">
-              <div className="grid grid-cols-2 gap-6">
-                {/* 왼쪽 열 */}
-                <div className="space-y-6 pt-12">
-                  <div className="aspect-[3/4] rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src="/hero-archive.png" alt="아카이브 공간" className="w-full h-full object-cover" />
-                  </div>
-                  <div className="aspect-square rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src="/hero-document.png" alt="기록 문서" className="w-full h-full object-cover" />
-                  </div>
+              <div className="grid grid-cols-2 gap-4 h-full">
+                {/* 왼쪽: 세로 긴 이미지 (hero-archive) */}
+                <div className="rounded-2xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-500 aspect-[2/3]">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/hero-archive.png" alt="아카이브 공간" className="w-full h-full object-cover hover:scale-105 transition-transform duration-700" />
                 </div>
-                {/* 오른쪽 열 */}
-                <div className="space-y-6">
-                  <div className="aspect-square rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all">
+                {/* 오른쪽: 위에 작은 정사각형 + 아래 여백 텍스트 */}
+                <div className="flex flex-col gap-4 pt-16">
+                  <div className="rounded-2xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-500 aspect-square">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src="/hero-document.png" alt="문서 기록" className="w-full h-full object-cover" />
+                    <img src="/hero-document.png" alt="기록 문서" className="w-full h-full object-cover hover:scale-105 transition-transform duration-700" />
                   </div>
-                  <div className="aspect-[3/4] rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src="/hero-archive.png" alt="아카이브" className="w-full h-full object-cover" />
+                  <div className="rounded-2xl bg-primary p-6 flex flex-col justify-between flex-1">
+                    <span className="material-symbols-outlined text-secondary text-[28px]">history_edu</span>
+                    <div>
+                      <p className="font-serif italic text-cream text-lg leading-snug">&ldquo;기록이 곧 지성이다&rdquo;</p>
+                      <p className="text-cream/40 text-xs font-sans mt-2 tracking-widest uppercase">Gwangdeok Archive</p>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -341,7 +331,7 @@ export default async function Home() {
       )}
 
       {/* ── 최종 CTA ──────────────────────────────── */}
-      <section className="py-32 bg-primary text-cream relative overflow-hidden">
+      <section className="py-16 bg-primary text-cream relative overflow-hidden">
         <div className="max-w-4xl mx-auto px-8 text-center relative z-10">
           <h2 className="font-serif italic text-4xl md:text-6xl mb-10 leading-tight">
             기록으로 남기고,<br />지성으로 이어지다.
