@@ -71,20 +71,12 @@ export default async function Home() {
       <section className="relative min-h-[70vh] flex flex-col justify-center overflow-hidden bg-primary text-cream pt-20">
         {/* 배경: 피처드 이미지 또는 기본 프리미엄 이미지 */}
         <div className="absolute inset-0 opacity-40">
-          {mainFeatured?.cover_image_url ? (
+          {mainFeatured?.cover_image_url && (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={mainFeatured.cover_image_url}
               alt=""
               className="w-full h-full object-cover"
-            />
-          ) : (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src="/images/hero-bg.webp"
-              alt="광덕아카이브 기본 배경"
-              className="w-full h-full object-cover"
-              onError={(e) => { e.currentTarget.style.display = 'none' }}
             />
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-surface via-primary/50 to-primary/20" />
@@ -177,13 +169,7 @@ export default async function Home() {
                         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                       />
                     ) : (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src="/images/inspection.webp"
-                        alt="에디터스 초이스 분위기 배경"
-                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 opacity-90"
-                        onError={(e) => { e.currentTarget.style.display = 'none' }}
-                      />
+                      <div className="w-full h-full bg-gradient-to-br from-primary-container to-primary" />
                     )}
                     {mainFeatured.category && (
                       <div className="absolute top-6 left-6">
@@ -226,13 +212,7 @@ export default async function Home() {
                           className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                         />
                       ) : (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src="/images/archive-room.webp"
-                          alt="에디터스 추천 배경"
-                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 opacity-60 mix-blend-luminosity"
-                          onError={(e) => { e.currentTarget.style.display = 'none' }}
-                        />
+                        <div className="w-full h-full bg-gradient-to-br from-primary-container to-primary" />
                       )}
                     </div>
                     <div>
@@ -331,17 +311,6 @@ export default async function Home() {
 
       {/* ── 최종 CTA ──────────────────────────────── */}
       <section className="py-32 bg-primary text-cream relative overflow-hidden flex items-center justify-center">
-        {/* 배경: 프리미엄 서고 이미지 */}
-        <div className="absolute inset-0">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/images/archive-room.webp"
-            alt="광덕아카이브 서고"
-            className="w-full h-full object-cover opacity-30"
-            onError={(e) => { e.currentTarget.style.display = 'none' }}
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-surface via-primary/80 to-primary/40" />
-        </div>
 
         <div className="max-w-4xl mx-auto px-8 text-center relative z-10 backdrop-blur-sm bg-primary/20 py-16 px-6 rounded-3xl border border-cream/10 shadow-2xl">
           <h2 className="text-4xl md:text-6xl font-serif italic mb-10 leading-tight drop-shadow-md">
