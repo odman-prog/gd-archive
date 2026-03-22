@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Eye, Download, FileText, User } from 'lucide-react'
+import { ArrowLeft, Download, FileText, Eye } from 'lucide-react'
 import { format } from 'date-fns'
 import { ko } from 'date-fns/locale'
 import { createClient } from '@/lib/supabase/server'
@@ -13,18 +13,17 @@ export default async function ContentDetailPage({ params }: { params: { id: stri
 
   const { data: { user } } = await supabase.auth.getUser()
 
-  // 콘텐츠 조회 (profiles 조인 없이)
   const { data: content } = await supabase
     .from('contents')
-    .select('id, title, excerpt, body, category, featured, view_count, like_count, created_at, author_id, file_url, file_name')
+    .select('id, title, excerpt, body, category, featured, view_count, like_count, created_at, author_id, file_url, file_name, cover_image_url, tags')
     .eq('id', params.id)
     .eq('status', 'published')
     .single()
 
   if (!content) notFound()
 
-  // 저자 프로필 별도 조회
   let authorLabel = '알 수 없음'
+  let authorGrade: string | null = null
   if (content.author_id) {
     const { data: profile } = await supabase
       .from('profiles')
@@ -32,11 +31,11 @@ export default async function ContentDetailPage({ params }: { params: { id: stri
       .eq('id', content.author_id)
       .single()
     if (profile) {
-      authorLabel = profile.grade ? `${profile.name} · ${profile.grade}학년` : profile.name
+      authorLabel = profile.name
+      authorGrade = profile.grade ? `${profile.grade}학년` : null
     }
   }
 
-  // 로그인 유저가 좋아요 눌렀는지 확인
   let isLiked = false
   if (user) {
     const { data: like } = await supabase
@@ -48,95 +47,207 @@ export default async function ContentDetailPage({ params }: { params: { id: stri
     isLiked = !!like
   }
 
+  // 관련 글 (같은 카테고리, 최신순 2개)
+  let relatedItems: {
+    id: string; title: string; category: string | null;
+    cover_image_url: string | null; created_at: string; author_id: string; authorName: string
+  }[] = []
+  if (content.category) {
+    const { data: relatedRaw } = await supabase
+      .from('contents')
+      .select('id, title, category, cover_image_url, created_at, author_id')
+      .eq('status', 'published')
+      .eq('category', content.category)
+      .neq('id', content.id)
+      .order('created_at', { ascending: false })
+      .limit(2)
+
+    if (relatedRaw && relatedRaw.length > 0) {
+      const authorIds = relatedRaw.map((r) => r.author_id).filter(Boolean) as string[]
+      const uniqueIds = authorIds.filter((id, i, arr) => arr.indexOf(id) === i)
+      const profileMap: Record<string, string> = {}
+      if (uniqueIds.length > 0) {
+        const { data: pd } = await supabase.from('profiles').select('id, name').in('id', uniqueIds)
+        ;(pd ?? []).forEach((p) => { profileMap[p.id] = p.name })
+      }
+      relatedItems = relatedRaw.map((r) => ({ ...r, authorName: profileMap[r.author_id] ?? '알 수 없음' }))
+    }
+  }
+
+  const tags: string[] = Array.isArray(content.tags) ? content.tags : []
   const categoryColor = CATEGORY_COLORS[content.category ?? ''] ?? CATEGORY_COLORS['기타']
 
+  const CATEGORY_GRADIENTS: Record<string, string> = {
+    '기사':     'from-blue-950 to-blue-800',
+    '에세이':   'from-emerald-950 to-emerald-800',
+    '인터뷰':   'from-violet-950 to-violet-800',
+    '시/수필':  'from-pink-950 to-pink-800',
+    '독서감상문': 'from-amber-950 to-amber-800',
+    '수행평가': 'from-orange-950 to-orange-800',
+  }
+
   return (
-    <div className="max-w-3xl mx-auto px-6 py-12">
+    <div className="max-w-7xl mx-auto px-6 lg:px-12 py-12">
       <ViewTracker contentId={content.id} currentViews={content.view_count} />
 
+      {/* 뒤로 가기 */}
       <Link
         href="/archive"
-        className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-primary/40 hover:text-primary transition-colors mb-10"
+        className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-primary/40 hover:text-primary transition-colors mb-12"
       >
         <ArrowLeft size={13} />
         아카이브
       </Link>
 
-      <div className="flex flex-wrap items-center gap-2 mb-5">
-        {content.category && (
-          <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider ${categoryColor}`}>
-            {content.category}
-          </span>
-        )}
-        {content.featured && (
-          <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-secondary/15 text-secondary uppercase tracking-wider">
-            ✦ 편집부 PICK
-          </span>
-        )}
-      </div>
-
-      <h1 className="text-3xl md:text-4xl font-serif font-bold text-primary leading-tight mb-6">
-        {content.title}
-      </h1>
-
-      <div className="flex items-center justify-between flex-wrap gap-4 mb-6">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full bg-primary/8 flex items-center justify-center text-primary/40">
-            <User size={15} />
+      <article className="max-w-3xl mx-auto">
+        {/* ── 아티클 헤더 (중앙 정렬) ───────────────── */}
+        <header className="mb-16 text-center space-y-6">
+          <div className="flex items-center justify-center gap-2 flex-wrap">
+            {content.category && (
+              <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold tracking-widest uppercase ${categoryColor}`}>
+                {content.category}
+              </span>
+            )}
+            {content.featured && (
+              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold tracking-widest uppercase bg-secondary/15 text-secondary">
+                ✦ 편집부 PICK
+              </span>
+            )}
           </div>
-          <div>
-            <p className="text-sm font-semibold text-primary">{authorLabel}</p>
-            <p className="text-xs text-primary/40 font-sans">
-              {format(new Date(content.created_at), 'yyyy년 M월 d일', { locale: ko })}
-            </p>
+
+          <h1 className="font-serif text-5xl md:text-6xl leading-[1.1] text-primary tracking-tight font-bold">
+            {content.title}
+          </h1>
+
+          <div className="flex justify-center items-center gap-3 text-sm font-medium text-primary/50 font-sans flex-wrap">
+            <span>{authorLabel}{authorGrade ? ` · ${authorGrade}` : ''}</span>
+            <span className="opacity-30">|</span>
+            <span>{format(new Date(content.created_at), 'yyyy년 M월 d일', { locale: ko })}</span>
+            <span className="opacity-30">|</span>
+            <span className="flex items-center gap-1"><Eye size={13} /> {content.view_count.toLocaleString()}</span>
           </div>
+        </header>
+
+        {/* ── 커버 이미지 ────────────────────────────── */}
+        <div className="relative w-full aspect-[16/9] mb-16 rounded-xl overflow-hidden shadow-xl">
+          {content.cover_image_url ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={content.cover_image_url}
+              alt={content.title}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className={`w-full h-full bg-gradient-to-br ${CATEGORY_GRADIENTS[content.category ?? ''] ?? 'from-primary to-[#1a4432]'}`} />
+          )}
         </div>
-        <div className="flex items-center gap-4 text-xs text-primary/35 font-sans">
-          <span className="flex items-center gap-1.5">
-            <Eye size={12} />
-            조회 {content.view_count.toLocaleString()}
-          </span>
-        </div>
-      </div>
 
-      <hr className="border-primary/10 mb-10" />
+        {/* ── 본문 ───────────────────────────────────── */}
+        <section
+          className="font-serif text-xl md:text-2xl leading-relaxed text-on-surface space-y-10 mb-16"
+          style={{ fontFamily: 'Newsreader, Georgia, serif' }}
+        >
+          {(content.body ?? content.excerpt ?? '본문이 없습니다.')
+            .split(/\n{2,}/)
+            .map((para: string, i: number) => (
+              <p
+                key={i}
+                className={i === 0 ? 'first-letter:text-7xl first-letter:font-bold first-letter:text-primary first-letter:mr-3 first-letter:float-left first-letter:leading-[0.85]' : ''}
+              >
+                {para.trim()}
+              </p>
+            ))}
+        </section>
 
-      {/* 본문 */}
-      <div className="font-serif text-lg leading-[1.9] text-primary/75 whitespace-pre-wrap mb-12">
-        {content.body ?? content.excerpt ?? '본문이 없습니다.'}
-      </div>
+        {/* ── 첨부파일 ───────────────────────────────── */}
+        {content.file_url && content.file_name && (
+          <div className="mb-12 py-10 border-y border-outline-variant/20">
+            <h3 className="text-[10px] font-bold uppercase tracking-widest text-secondary mb-3 flex items-center gap-2 font-sans">
+              <FileText size={12} />
+              첨부파일
+            </h3>
+            <div className="flex items-center justify-between px-5 py-4 bg-surface rounded-xl border border-primary/8 gap-4">
+              <p className="text-sm text-primary truncate font-sans">{content.file_name}</p>
+              <a
+                href={content.file_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                download={content.file_name}
+                className="shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-full bg-primary text-cream text-xs font-semibold hover:bg-primary/90 transition-colors font-sans"
+              >
+                <Download size={12} />
+                다운로드
+              </a>
+            </div>
+          </div>
+        )}
 
-      {/* 첨부파일 */}
-      {content.file_url && content.file_name && (
-        <div className="mb-10">
-          <h3 className="text-[10px] font-bold uppercase tracking-widest text-secondary mb-3 flex items-center gap-2">
-            <FileText size={12} />
-            첨부파일
-          </h3>
-          <div className="flex items-center justify-between px-5 py-4 bg-surface rounded-xl border border-primary/8 gap-4">
-            <p className="text-sm text-primary truncate font-sans">{content.file_name}</p>
-            <a
-              href={content.file_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              download={content.file_name}
-              className="shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-full bg-primary text-cream text-xs font-semibold hover:bg-primary/90 transition-colors"
+        {/* ── 아티클 푸터 (태그 + 좋아요/공유) ─────────── */}
+        <footer className="pt-10 border-t border-outline-variant/20 flex flex-wrap justify-between items-center gap-6">
+          <div className="flex flex-wrap gap-2">
+            {tags.map((tag) => (
+              <span key={tag} className="px-4 py-2 bg-surface rounded-lg text-sm text-primary font-medium font-sans">
+                #{tag}
+              </span>
+            ))}
+          </div>
+          <div className="flex items-center gap-2">
+            <LikeButton
+              contentId={content.id}
+              initialCount={content.like_count}
+              initialLiked={isLiked}
+              userId={user?.id ?? null}
+            />
+            <button
+              onClick={undefined}
+              className="flex items-center gap-2 px-4 py-2 hover:bg-surface rounded-lg transition-all text-sm font-medium text-primary/70 font-sans"
             >
-              <Download size={12} />
-              다운로드
-            </a>
+              <span className="material-symbols-outlined text-[20px]">share</span>
+              공유하기
+            </button>
           </div>
-        </div>
-      )}
+        </footer>
 
-      <div className="flex justify-center pt-6 border-t border-primary/10">
-        <LikeButton
-          contentId={content.id}
-          initialCount={content.like_count}
-          initialLiked={isLiked}
-          userId={user?.id ?? null}
-        />
-      </div>
+        {/* ── 관련 글 ────────────────────────────────── */}
+        {relatedItems.length > 0 && (
+          <section className="mt-24 space-y-10">
+            <div className="flex justify-between items-end">
+              <h3 className="font-serif text-3xl text-primary">함께 읽어볼 만한 글</h3>
+              <Link
+                href={`/archive?category=${encodeURIComponent(content.category ?? '')}`}
+                className="text-xs font-bold text-secondary flex items-center gap-1 hover:underline font-sans"
+              >
+                관련 주제 더보기
+                <span className="material-symbols-outlined text-[16px]">open_in_new</span>
+              </Link>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+              {relatedItems.map((item) => (
+                <Link key={item.id} href={`/archive/${item.id}`} className="group cursor-pointer">
+                  <div className="aspect-[16/10] rounded-xl overflow-hidden mb-4 shadow-sm">
+                    {item.cover_image_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={item.cover_image_url}
+                        alt={item.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                    ) : (
+                      <div className={`w-full h-full bg-gradient-to-br ${CATEGORY_GRADIENTS[item.category ?? ''] ?? 'from-primary to-[#1a4432]'} group-hover:scale-105 transition-transform duration-500`} />
+                    )}
+                  </div>
+                  <h4 className="font-serif text-xl text-primary leading-snug group-hover:text-secondary transition-colors line-clamp-2">
+                    {item.title}
+                  </h4>
+                  <p className="text-xs text-on-surface-variant mt-2 font-sans">
+                    {item.category} | {item.authorName}
+                  </p>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
+      </article>
     </div>
   )
 }
