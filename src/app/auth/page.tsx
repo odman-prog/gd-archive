@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { Eye, EyeOff, Loader2 } from 'lucide-react'
 
@@ -171,7 +172,10 @@ export default function AuthPage() {
                 아카이브 입장하기
               </button>
               <p className="text-center text-xs text-primary/30">
-                비밀번호를 잊으셨나요? 담당 선생님께 재설정을 요청하세요.
+                학번이나 비밀번호를 잊으셨나요?{' '}
+                <Link href="/auth/recover" className="text-secondary hover:underline font-medium">
+                  계정 정보 찾기
+                </Link>
               </p>
             </form>
           )}
