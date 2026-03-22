@@ -95,8 +95,15 @@ export default function AuthPage() {
 
   return (
     <div className="min-h-[calc(100vh-64px)] flex items-stretch">
-      <div className="hidden md:flex md:w-5/12 bg-primary flex-col justify-end p-14 relative">
-        <div>
+      <div className="hidden md:flex md:w-5/12 bg-primary flex-col justify-end p-14 relative overflow-hidden">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/hero-archive.png"
+          alt=""
+          className="absolute inset-0 w-full h-full object-cover opacity-25"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-primary via-primary/60 to-transparent" />
+        <div className="relative z-10">
           <span className="inline-block px-3 py-1 bg-secondary text-cream text-[10px] font-bold rounded-full mb-8 uppercase tracking-widest">
             Established
           </span>

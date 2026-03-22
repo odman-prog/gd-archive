@@ -65,7 +65,7 @@ export default async function Home() {
     <div>
 
       {/* ── 히어로 섹션 ────────────────────────────── */}
-      <section className="relative h-[870px] min-h-[600px] flex items-center overflow-hidden">
+      <section className="relative h-[870px] min-h-[600px] flex items-center overflow-hidden bg-primary">
         {/* 배경 이미지 */}
         <div className="absolute inset-0 z-0">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -240,41 +240,36 @@ export default async function Home() {
         <div className="max-w-screen-2xl mx-auto px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
 
-            {/* 매거진 오버랩 이미지 레이아웃 */}
+            {/* 클린 2분할 이미지 레이아웃 */}
             <div className="order-2 lg:order-1">
-              <div className="relative h-[520px] lg:h-[600px]">
-                {/* 메인 이미지: hero-archive.png */}
-                <div className="absolute inset-0 rounded-2xl overflow-hidden shadow-2xl">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src="/hero-archive.png"
-                    alt="아카이브 공간"
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-primary/60 via-transparent to-transparent" />
-                  {/* 하단 오버레이 텍스트 */}
-                  <div className="absolute bottom-6 left-6">
-                    <p className="font-serif italic text-cream/90 text-xl leading-snug drop-shadow">
-                      &ldquo;기록이 곧 지성이다&rdquo;
-                    </p>
-                    <p className="text-secondary text-xs font-sans mt-2 tracking-widest uppercase">Gwangdeok Archive</p>
-                  </div>
-                </div>
-
-                {/* 플로팅 인셋: hero-document.png */}
-                <div className="absolute -bottom-8 -right-6 w-[55%] aspect-[4/3] rounded-xl overflow-hidden shadow-2xl border-4 border-surface-container-low z-10">
+              <div className="grid grid-cols-5 gap-4 h-[540px]">
+                {/* 왼쪽 (3/5): hero-document.png 세로 전체 */}
+                <div className="col-span-3 rounded-2xl overflow-hidden shadow-xl">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src="/hero-document.png"
                     alt="기록 문서"
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-700"
                   />
                 </div>
-
-                {/* 작은 스탯 뱃지 */}
-                <div className="absolute -top-4 -right-4 bg-secondary-container text-on-secondary-container rounded-full px-4 py-2 shadow-lg z-20 flex items-center gap-2">
-                  <span className="material-symbols-outlined text-[16px]">auto_stories</span>
-                  <span className="font-sans text-xs font-bold tracking-wide">Since 2024</span>
+                {/* 오른쪽 (2/5): 위 hero-logo + 아래 인용 카드 */}
+                <div className="col-span-2 flex flex-col gap-4">
+                  {/* 로고 카드 */}
+                  <div className="flex-1 rounded-2xl bg-primary flex items-center justify-center p-8 shadow-xl">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src="/hero-logo.png"
+                      alt="광덕고등학교"
+                      className="w-full max-w-[140px] object-contain opacity-90"
+                    />
+                  </div>
+                  {/* 인용 카드 */}
+                  <div className="rounded-2xl bg-secondary-container px-6 py-5 shadow-sm">
+                    <span className="material-symbols-outlined text-on-secondary-container text-[20px] mb-2 block" style={{ fontVariationSettings: "'FILL' 1" }}>format_quote</span>
+                    <p className="font-serif italic text-on-secondary-container text-sm leading-relaxed">
+                      기록이 곧<br />지성이다
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
