@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import FooterActions from './FooterActions'
 
 export default function Footer() {
   return (
@@ -20,11 +21,8 @@ export default function Footer() {
           <Link href="/mypage" className="font-sans text-sm tracking-wide uppercase text-cream/60 hover:text-secondary transition-colors">마이페이지</Link>
         </div>
 
-        {/* 소셜 아이콘 */}
-        <div className="flex gap-6">
-          <span className="material-symbols-outlined text-cream/40 hover:text-secondary cursor-pointer transition-colors">share</span>
-          <span className="material-symbols-outlined text-cream/40 hover:text-secondary cursor-pointer transition-colors">library_books</span>
-        </div>
+        {/* 공유 & 복사 아이콘 */}
+        <FooterActions />
       </div>
 
       <div className="border-t border-cream/10 py-6 text-center text-xs font-sans tracking-[0.2em] uppercase text-cream/30">

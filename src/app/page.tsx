@@ -240,27 +240,41 @@ export default async function Home() {
         <div className="max-w-screen-2xl mx-auto px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
 
-            {/* 비대칭 2-이미지 레이아웃 */}
+            {/* 매거진 오버랩 이미지 레이아웃 */}
             <div className="order-2 lg:order-1">
-              <div className="grid grid-cols-2 gap-4 h-full">
-                {/* 왼쪽: 세로 긴 이미지 (hero-archive) */}
-                <div className="rounded-2xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-500 aspect-[2/3]">
+              <div className="relative h-[520px] lg:h-[600px]">
+                {/* 메인 이미지: hero-archive.png */}
+                <div className="absolute inset-0 rounded-2xl overflow-hidden shadow-2xl">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src="/hero-archive.png" alt="아카이브 공간" className="w-full h-full object-cover hover:scale-105 transition-transform duration-700" />
+                  <img
+                    src="/hero-archive.png"
+                    alt="아카이브 공간"
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-primary/60 via-transparent to-transparent" />
+                  {/* 하단 오버레이 텍스트 */}
+                  <div className="absolute bottom-6 left-6">
+                    <p className="font-serif italic text-cream/90 text-xl leading-snug drop-shadow">
+                      &ldquo;기록이 곧 지성이다&rdquo;
+                    </p>
+                    <p className="text-secondary text-xs font-sans mt-2 tracking-widest uppercase">Gwangdeok Archive</p>
+                  </div>
                 </div>
-                {/* 오른쪽: 위에 작은 정사각형 + 아래 여백 텍스트 */}
-                <div className="flex flex-col gap-4 pt-16">
-                  <div className="rounded-2xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-500 aspect-square">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src="/hero-document.png" alt="기록 문서" className="w-full h-full object-cover hover:scale-105 transition-transform duration-700" />
-                  </div>
-                  <div className="rounded-2xl bg-primary p-6 flex flex-col justify-between flex-1">
-                    <span className="material-symbols-outlined text-secondary text-[28px]">history_edu</span>
-                    <div>
-                      <p className="font-serif italic text-cream text-lg leading-snug">&ldquo;기록이 곧 지성이다&rdquo;</p>
-                      <p className="text-cream/40 text-xs font-sans mt-2 tracking-widest uppercase">Gwangdeok Archive</p>
-                    </div>
-                  </div>
+
+                {/* 플로팅 인셋: hero-document.png */}
+                <div className="absolute -bottom-8 -right-6 w-[55%] aspect-[4/3] rounded-xl overflow-hidden shadow-2xl border-4 border-surface-container-low z-10">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src="/hero-document.png"
+                    alt="기록 문서"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+
+                {/* 작은 스탯 뱃지 */}
+                <div className="absolute -top-4 -right-4 bg-secondary-container text-on-secondary-container rounded-full px-4 py-2 shadow-lg z-20 flex items-center gap-2">
+                  <span className="material-symbols-outlined text-[16px]">auto_stories</span>
+                  <span className="font-sans text-xs font-bold tracking-wide">Since 2024</span>
                 </div>
               </div>
             </div>
