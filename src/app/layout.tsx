@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import './globals.css'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
+import BottomNav from '@/components/BottomNav'
 
 export const metadata: Metadata = {
   title: '광덕아카이브',
@@ -29,10 +30,11 @@ export default function RootLayout({
       </head>
       <body className="flex flex-col min-h-screen bg-cream font-sans">
         <Header />
-        <main className="flex-1">
+        <main className="flex-1 pb-20 md:pb-0">
           {children}
         </main>
         <Footer />
+        <BottomNav />
       </body>
     </html>
   )
