@@ -16,23 +16,23 @@ export type Content = {
 }
 
 export const CATEGORY_COLORS: Record<string, string> = {
-  '기사':       'bg-blue-100 text-blue-700',
-  '에세이':     'bg-emerald-100 text-emerald-700',
-  '인터뷰':     'bg-violet-100 text-violet-700',
-  '시/수필':    'bg-pink-100 text-pink-700',
+  '기사': 'bg-blue-100 text-blue-700',
+  '에세이': 'bg-emerald-100 text-emerald-700',
+  '인터뷰': 'bg-violet-100 text-violet-700',
+  '시/수필': 'bg-pink-100 text-pink-700',
   '독서감상문': 'bg-amber-100 text-amber-700',
-  '수행평가':   'bg-orange-100 text-orange-700',
-  '기타':       'bg-gray-100 text-gray-600',
+  '수행평가': 'bg-orange-100 text-orange-700',
+  '기타': 'bg-gray-100 text-gray-600',
 }
 
 export const CATEGORY_GRADIENTS: Record<string, string> = {
-  '기사':       'from-blue-900 to-blue-700',
-  '에세이':     'from-emerald-900 to-emerald-700',
-  '인터뷰':     'from-violet-900 to-violet-700',
-  '시/수필':    'from-pink-900 to-pink-700',
-  '독서감상문': 'from-amber-900 to-amber-700',
-  '수행평가':   'from-orange-900 to-orange-700',
-  '기타':       'from-gray-800 to-gray-600',
+  '기사': 'from-slate-900 to-blue-900',
+  '에세이': 'from-zinc-900 to-emerald-900',
+  '인터뷰': 'from-[#1a1525] to-violet-900',
+  '시/수필': 'from-[#2a1b22] to-pink-900',
+  '독서감상문': 'from-[#2a2115] to-amber-900',
+  '수행평가': 'from-[#2c1d11] to-orange-900',
+  '기타': 'from-zinc-900 to-zinc-800',
 }
 
 export default function ContentCard({ content }: { content: Content }) {
@@ -41,11 +41,11 @@ export default function ContentCard({ content }: { content: Content }) {
   const profile = content.profiles
   const authorMeta = profile
     ? [
-        profile.name,
-        profile.grade && profile.class_num ? `${profile.grade}-${profile.class_num}` : null,
-      ]
-        .filter(Boolean)
-        .join(' · ')
+      profile.name,
+      profile.grade && profile.class_num ? `${profile.grade}-${profile.class_num}` : null,
+    ]
+      .filter(Boolean)
+      .join(' · ')
     : '알 수 없음'
 
   const timeAgo = formatDistanceToNow(new Date(content.created_at), { addSuffix: true, locale: ko })

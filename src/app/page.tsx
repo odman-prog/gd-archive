@@ -3,7 +3,7 @@ import { format } from 'date-fns'
 import { ko } from 'date-fns/locale'
 import { createClient } from '@/lib/supabase/server'
 import ContentCard from '@/components/ContentCard'
-import { CATEGORY_GRADIENTS } from '@/components/ContentCard'
+
 
 async function getStats(supabase: ReturnType<typeof createClient>) {
   const [contents, profiles] = await Promise.all([
@@ -35,7 +35,7 @@ async function getContentList(supabase: ReturnType<typeof createClient>, feature
 
   if (uniqueIds.length > 0) {
     const { data: pd } = await supabase.from('profiles').select('id, name').in('id', uniqueIds)
-    ;(pd ?? []).forEach((p) => { profileMap[p.id] = { name: p.name } })
+      ; (pd ?? []).forEach((p) => { profileMap[p.id] = { name: p.name } })
   }
 
   return data.map((c) => ({
@@ -68,8 +68,8 @@ export default async function Home() {
     <div>
 
       {/* ── 히어로 섹션 ────────────────────────────── */}
-      <section className="relative h-[870px] flex items-center overflow-hidden bg-primary text-cream">
-        {/* 배경: 피처드 이미지 또는 그라데이션 */}
+      <section className="relative min-h-[70vh] flex flex-col justify-center overflow-hidden bg-primary text-cream pt-20">
+        {/* 배경: 피처드 이미지 또는 기본 프리미엄 이미지 */}
         <div className="absolute inset-0 opacity-40">
           {mainFeatured?.cover_image_url ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -79,47 +79,74 @@ export default async function Home() {
               className="w-full h-full object-cover"
             />
           ) : (
-            <div className={`w-full h-full bg-gradient-to-br ${CATEGORY_GRADIENTS[mainFeatured?.category ?? ''] ?? 'from-primary-container to-primary'}`} />
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src="/images/hero-bg.webp"
+              alt="광덕아카이브 기본 배경"
+              className="w-full h-full object-cover"
+              onError={(e) => { e.currentTarget.style.display = 'none' }}
+            />
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-primary via-primary/20 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-surface via-primary/50 to-primary/20" />
         </div>
 
-        <div className="relative z-10 max-w-screen-2xl mx-auto px-8 w-full">
+        <div className="relative z-10 max-w-screen-2xl mx-auto px-8 w-full mt-10 mb-16">
           <div className="max-w-3xl">
-            <span className="inline-block px-4 py-1.5 bg-secondary-container text-on-secondary-container font-sans text-xs tracking-widest uppercase rounded-full mb-6">
+            <span className="inline-block px-4 py-1.5 bg-secondary-container text-on-secondary-container font-sans text-xs tracking-widest uppercase rounded-full mb-6 shadow-sm">
               광덕고등학교 교지편집부
             </span>
-            <h1 className="text-6xl md:text-8xl font-serif font-bold leading-[1.1] mb-6 tracking-tight">
+            <h1 className="text-5xl md:text-7xl lg:text-8xl font-serif font-bold leading-[1.1] mb-6 tracking-tight drop-shadow-lg">
               The Editorial<br />
               <span className="italic font-normal">Archive</span>
             </h1>
-            <p className="text-xl md:text-2xl font-serif text-cream/80 mb-10 max-w-xl italic">
+            <p className="text-xl md:text-2xl font-serif text-cream/90 mb-10 max-w-xl italic drop-shadow-md">
               기록이 지성이 되는 공간
             </p>
+
+            {/* 검색 바 */}
+            <div className="max-w-2xl bg-surface/10 backdrop-blur-md border border-cream/20 rounded-full p-2 flex items-center shadow-2xl mb-8 transition-colors focus-within:bg-surface/20 focus-within:border-cream/40">
+              <span className="material-symbols-outlined text-cream/70 ml-4">search</span>
+              <form action="/archive" method="get" className="flex-1 flex">
+                <input
+                  type="text"
+                  name="q"
+                  placeholder="제목이나 키워드로 아카이브 검색..."
+                  className="w-full bg-transparent border-none text-cream placeholder-cream/50 px-4 py-3 focus:outline-none font-sans text-lg"
+                />
+                <button type="submit" className="px-8 py-3 bg-cream text-primary font-bold rounded-full hover:bg-cream/90 transition-colors">
+                  검색
+                </button>
+              </form>
+            </div>
+
             <div className="flex flex-wrap gap-4">
               <Link
-                href="/archive"
-                className="px-8 py-4 bg-primary-container text-cream font-serif text-lg rounded-lg hover:bg-primary-container/90 transition-colors"
-                style={{ boxShadow: '0 12px 32px -4px rgba(28,28,21,0.06)' }}
-              >
-                아카이브 탐색
-              </Link>
-              <Link
                 href="/write"
-                className="px-8 py-4 bg-transparent border border-cream/20 text-cream font-serif text-lg rounded-lg hover:bg-cream/5 transition-all"
+                className="px-8 py-4 bg-transparent border border-cream/30 text-cream font-serif text-lg rounded-full hover:bg-cream/10 transition-all backdrop-blur-sm"
               >
-                글 올리기
+                기록 남기기
               </Link>
             </div>
           </div>
         </div>
 
-        {mainFeatured && (
-          <div className="absolute bottom-12 right-8 text-right hidden md:block">
-            <p className="font-sans text-xs uppercase tracking-widest text-cream/40 mb-2">Featured Publication</p>
-            <p className="font-serif italic text-lg text-cream/70 line-clamp-1 max-w-xs">{mainFeatured.title}</p>
+        {/* 퀵 카테고리 네비게이션 */}
+        <div className="relative z-10 w-full bg-surface-container-low/80 backdrop-blur-md border-t border-cream/10 mt-auto">
+          <div className="max-w-screen-2xl mx-auto px-8 py-6 flex flex-wrap gap-4 md:gap-12 justify-center md:justify-start">
+            {[
+              { label: '기사', icon: 'news' },
+              { label: '에세이', icon: 'edit_document' },
+              { label: '인터뷰', icon: 'mic' },
+              { label: '시/수필', icon: 'menu_book' },
+              { label: '독서감상문', icon: 'auto_stories' },
+            ].map(cat => (
+              <Link key={cat.label} href={`/archive?category=${cat.label}`} className="flex items-center gap-2.5 text-cream/70 hover:text-secondary transition-colors group">
+                <span className="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">{cat.icon}</span>
+                <span className="font-sans font-medium">{cat.label}</span>
+              </Link>
+            ))}
           </div>
-        )}
+        </div>
       </section>
 
       {/* ── 에디터스 초이스 ──────────────────────────── */}
@@ -150,7 +177,13 @@ export default async function Home() {
                         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                       />
                     ) : (
-                      <div className={`w-full h-full bg-gradient-to-br ${CATEGORY_GRADIENTS[mainFeatured.category ?? ''] ?? 'from-primary to-[#1a4432]'} transition-transform duration-700 group-hover:scale-105`} />
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src="/images/inspection.webp"
+                        alt="에디터스 초이스 분위기 배경"
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 opacity-90"
+                        onError={(e) => { e.currentTarget.style.display = 'none' }}
+                      />
                     )}
                     {mainFeatured.category && (
                       <div className="absolute top-6 left-6">
@@ -184,7 +217,7 @@ export default async function Home() {
                 {/* 세컨더리 피처 */}
                 {secondaryFeatured && (
                   <Link href={`/archive/${secondaryFeatured.id}`} className="group cursor-pointer">
-                    <div className="relative overflow-hidden rounded-xl bg-surface-container-low mb-6 max-h-64 aspect-[4/3]">
+                    <div className="relative overflow-hidden rounded-xl bg-surface-container-low mb-6 max-h-64 aspect-[4/3] bg-primary">
                       {secondaryFeatured.cover_image_url ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
@@ -193,7 +226,13 @@ export default async function Home() {
                           className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                         />
                       ) : (
-                        <div className={`w-full h-full bg-gradient-to-br ${CATEGORY_GRADIENTS[secondaryFeatured.category ?? ''] ?? 'from-primary to-[#1a4432]'} transition-transform duration-700 group-hover:scale-105`} />
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src="/images/archive-room.webp"
+                          alt="에디터스 추천 배경"
+                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 opacity-60 mix-blend-luminosity"
+                          onError={(e) => { e.currentTarget.style.display = 'none' }}
+                        />
                       )}
                     </div>
                     <div>
@@ -212,20 +251,27 @@ export default async function Home() {
 
                 {/* 최신 디스패치 리스트 */}
                 {latestDispatch.length > 0 && (
-                  <div className="bg-surface-container-low p-8 rounded-xl border-l-4 border-secondary">
-                    <h4 className="font-serif italic text-xl text-primary mb-6">최신 글</h4>
-                    <ul className="space-y-6">
+                  <div className="bg-surface-container-low shadow-sm p-8 rounded-xl border border-secondary/20 relative overflow-hidden group hover:border-secondary transition-colors">
+                    <div className="absolute right-0 top-0 w-32 h-32 bg-secondary/10 rounded-full blur-3xl -translate-y-12 translate-x-12 group-hover:bg-secondary/20 transition-colors" />
+                    <h4 className="font-serif italic text-xl text-primary mb-6 flex items-center gap-2">
+                      <span className="material-symbols-outlined text-[20px] text-secondary">schedule</span>최신 글
+                    </h4>
+                    <ul className="space-y-5 -mr-4 pr-4">
                       {latestDispatch.map((item) => (
-                        <li key={item.id} className="group">
-                          <Link href={`/archive/${item.id}`} className="block">
-                            {item.category && (
-                              <p className="text-[10px] font-sans uppercase tracking-widest text-secondary mb-1">{item.category}</p>
-                            )}
-                            <p className="font-serif font-bold text-primary group-hover:underline line-clamp-1">{item.title}</p>
+                        <li key={item.id} className="group/item">
+                          <Link href={`/archive/${item.id}`} className="flex flex-col gap-1.5 border-b border-primary/10 pb-4">
+                            <div className="flex items-center gap-2">
+                              {item.category && (
+                                <span className="text-[10px] font-sans font-bold uppercase tracking-widest text-secondary bg-secondary/10 px-2 py-0.5 rounded">{item.category}</span>
+                              )}
+                              <span className="text-[10px] font-sans text-primary/40">{ko ? format(new Date(item.created_at), 'M.d') : ''}</span>
+                            </div>
+                            <p className="font-serif font-bold text-primary group-hover/item:text-secondary transition-colors line-clamp-2 md:line-clamp-1">{item.title}</p>
                           </Link>
                         </li>
                       ))}
                     </ul>
+                    <Link href="/archive" className="mt-5 text-xs font-bold font-sans text-secondary hover:underline flex items-center gap-1">전체보기 <span className="material-symbols-outlined text-[14px]">chevron_right</span></Link>
                   </div>
                 )}
               </div>
@@ -284,23 +330,37 @@ export default async function Home() {
       )}
 
       {/* ── 최종 CTA ──────────────────────────────── */}
-      <section className="py-32 bg-primary text-cream relative overflow-hidden">
-        <div className="max-w-4xl mx-auto px-8 text-center relative z-10">
-          <h2 className="text-4xl md:text-6xl font-serif italic mb-10 leading-tight">
+      <section className="py-32 bg-primary text-cream relative overflow-hidden flex items-center justify-center">
+        {/* 배경: 프리미엄 서고 이미지 */}
+        <div className="absolute inset-0">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/images/archive-room.webp"
+            alt="광덕아카이브 서고"
+            className="w-full h-full object-cover opacity-30"
+            onError={(e) => { e.currentTarget.style.display = 'none' }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-surface via-primary/80 to-primary/40" />
+        </div>
+
+        <div className="max-w-4xl mx-auto px-8 text-center relative z-10 backdrop-blur-sm bg-primary/20 py-16 px-6 rounded-3xl border border-cream/10 shadow-2xl">
+          <h2 className="text-4xl md:text-6xl font-serif italic mb-10 leading-tight drop-shadow-md">
             기록으로 남기고,<br />지성으로 이어지다.
           </h2>
-          <div className="h-px w-24 bg-secondary/40 mx-auto mb-10" />
-          <p className="text-lg md:text-xl font-serif text-cream/60 max-w-2xl mx-auto mb-12 italic">
+          <div className="h-px w-24 bg-secondary/60 mx-auto mb-10" />
+          <p className="text-lg md:text-xl font-serif text-cream/80 max-w-2xl mx-auto mb-12 italic drop-shadow">
             광덕아카이브는 단순한 데이터베이스가 아닙니다.<br />
             광덕고등학교의 지적 여정이 살아 숨쉬는 공간입니다.
           </p>
-          <Link
-            href="/archive"
-            className="inline-block px-12 py-5 bg-surface text-primary font-sans font-bold uppercase tracking-[0.2em] text-sm rounded-full hover:bg-secondary-container transition-colors"
-            style={{ boxShadow: '0 12px 32px -4px rgba(28,28,21,0.06)' }}
-          >
-            아카이브 입장
-          </Link>
+          <div className="flex gap-4 justify-center">
+            <Link
+              href="/archive"
+              className="inline-flex items-center gap-2 px-10 py-5 bg-cream text-primary font-sans font-bold uppercase tracking-[0.2em] text-sm rounded-full hover:bg-cream/90 transition-colors shadow-lg"
+            >
+              <span className="material-symbols-outlined text-[18px]">explore</span>
+              아카이브 입장
+            </Link>
+          </div>
         </div>
       </section>
 
