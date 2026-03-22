@@ -56,14 +56,13 @@ export default async function Home() {
 
   const mainFeatured = featured[0] ?? latest[0] ?? null
   const secondaryFeatured = featured[1] ?? latest[1] ?? null
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const latestDispatch = latest.filter(
+  const excluded = latest.filter(
     (item) => item.id !== mainFeatured?.id && item.id !== secondaryFeatured?.id
-  ).slice(0, 2) as any[]
+  )
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const moreItems = latest.filter(
-    (item) => item.id !== mainFeatured?.id && item.id !== secondaryFeatured?.id
-  ).slice(2, 6) as any[]
+  const latestDispatch = excluded.slice(0, 2) as any[]
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const moreItems = excluded.slice(2, 6) as any[]
 
   return (
     <div>
