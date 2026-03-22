@@ -10,16 +10,12 @@ export function createClient() {
     {
       cookies: {
         getAll() {
-          return cookieStore.getAll().map(({ name, value }) => ({
-            name,
-            value: (() => { try { return decodeURIComponent(value) } catch { return value } })(),
-          }))
+          return cookieStore.getAll()
         },
         setAll(cookiesToSet) {
           try {
             cookiesToSet.forEach(({ name, value, options }) => {
-              const safeValue = encodeURIComponent(value)
-              cookieStore.set(name, safeValue, options)
+              cookieStore.set(name, value, options)
             })
           } catch {
             // Server Component에서 호출된 경우 무시

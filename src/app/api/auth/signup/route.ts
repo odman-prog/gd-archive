@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
       name,
       student_id: studentId,
       grade: Number(grade),
-      class: Number(classNum),
+      class_num: Number(classNum),
       number: Number(number),
       status: 'pending',
       role: 'student',

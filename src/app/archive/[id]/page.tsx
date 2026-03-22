@@ -8,38 +8,33 @@ import { CATEGORY_COLORS } from '@/components/ContentCard'
 import LikeButton from './LikeButton'
 import ViewTracker from './ViewTracker'
 
-type Attachment = {
-  id: string
-  file_name: string
-  storage_path: string
-  file_size: number | null
-}
-
 export default async function ContentDetailPage({ params }: { params: { id: string } }) {
   const supabase = createClient()
 
-  // 현재 로그인 유저
   const { data: { user } } = await supabase.auth.getUser()
 
-  // 콘텐츠 + 작성자 조회
+  // 콘텐츠 조회 (profiles 조인 없이)
   const { data: content } = await supabase
     .from('contents')
-    .select(`
-      id, title, summary, body, category, featured,
-      view_count, like_count, created_at, author_id,
-      profiles(name, grade, class_num)
-    `)
+    .select('id, title, excerpt, body, category, featured, view_count, like_count, created_at, author_id, file_url, file_name')
     .eq('id', params.id)
     .eq('status', 'published')
     .single()
 
   if (!content) notFound()
 
-  // 첨부파일 조회
-  const { data: attachments } = await supabase
-    .from('attachments')
-    .select('id, file_name, storage_path, file_size')
-    .eq('content_id', params.id)
+  // 저자 프로필 별도 조회
+  let authorLabel = '알 수 없음'
+  if (content.author_id) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('name, grade')
+      .eq('id', content.author_id)
+      .single()
+    if (profile) {
+      authorLabel = profile.grade ? `${profile.name} · ${profile.grade}학년` : profile.name
+    }
+  }
 
   // 로그인 유저가 좋아요 눌렀는지 확인
   let isLiked = false
@@ -53,129 +48,88 @@ export default async function ContentDetailPage({ params }: { params: { id: stri
     isLiked = !!like
   }
 
-  // 첨부파일 서명된 URL 생성
-  const attachmentsWithUrl: (Attachment & { url: string })[] = await Promise.all(
-    (attachments ?? []).map(async (att) => {
-      const { data } = await supabase.storage
-        .from('attachments')
-        .createSignedUrl(att.storage_path, 60 * 60) // 1시간
-      return { ...att, url: data?.signedUrl ?? '' }
-    })
-  )
-
-  const profile = content.profiles as unknown as { name: string; grade?: number | null; class_num?: number | null } | null
   const categoryColor = CATEGORY_COLORS[content.category ?? ''] ?? CATEGORY_COLORS['기타']
-  const authorLabel = profile
-    ? [profile.name, profile.grade && profile.class_num ? `${profile.grade}학년 ${profile.class_num}반` : null]
-        .filter(Boolean).join(' · ')
-    : '알 수 없음'
-
-  function formatFileSize(bytes: number | null) {
-    if (!bytes) return ''
-    if (bytes < 1024) return `${bytes} B`
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
-  }
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-10">
+    <div className="max-w-3xl mx-auto px-6 py-12">
       <ViewTracker contentId={content.id} currentViews={content.view_count} />
 
-      {/* 뒤로 가기 */}
       <Link
         href="/archive"
-        className="inline-flex items-center gap-1.5 text-sm text-[#1B4332]/50 hover:text-[#1B4332] transition-colors mb-8"
+        className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-primary/40 hover:text-primary transition-colors mb-10"
       >
-        <ArrowLeft size={16} />
-        목록으로
+        <ArrowLeft size={13} />
+        아카이브
       </Link>
 
-      {/* 태그 영역 */}
-      <div className="flex flex-wrap items-center gap-2 mb-4">
+      <div className="flex flex-wrap items-center gap-2 mb-5">
         {content.category && (
-          <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${categoryColor}`}>
+          <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider ${categoryColor}`}>
             {content.category}
           </span>
         )}
         {content.featured && (
-          <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-[#D4A373]/20 text-[#D4A373]">
+          <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-secondary/15 text-secondary uppercase tracking-wider">
             ✦ 편집부 PICK
           </span>
         )}
       </div>
 
-      {/* 제목 */}
-      <h1 className="text-2xl md:text-3xl font-bold text-[#1B4332] leading-tight mb-6">
+      <h1 className="text-3xl md:text-4xl font-serif font-bold text-primary leading-tight mb-6">
         {content.title}
       </h1>
 
-      {/* 작성자 + 메타 */}
-      <div className="flex items-center justify-between flex-wrap gap-4 mb-4">
+      <div className="flex items-center justify-between flex-wrap gap-4 mb-6">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full bg-[#1B4332]/10 flex items-center justify-center text-[#1B4332]/50">
-            <User size={16} />
+          <div className="w-9 h-9 rounded-full bg-primary/8 flex items-center justify-center text-primary/40">
+            <User size={15} />
           </div>
           <div>
-            <p className="text-sm font-semibold text-[#1B4332]">{authorLabel}</p>
-            <p className="text-xs text-[#1B4332]/40">
+            <p className="text-sm font-semibold text-primary">{authorLabel}</p>
+            <p className="text-xs text-primary/40 font-sans">
               {format(new Date(content.created_at), 'yyyy년 M월 d일', { locale: ko })}
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-4 text-xs text-[#1B4332]/40">
+        <div className="flex items-center gap-4 text-xs text-primary/35 font-sans">
           <span className="flex items-center gap-1.5">
-            <Eye size={13} />
+            <Eye size={12} />
             조회 {content.view_count.toLocaleString()}
           </span>
         </div>
       </div>
 
-      <hr className="border-[#1B4332]/10 mb-8" />
+      <hr className="border-primary/10 mb-10" />
 
       {/* 본문 */}
-      <div className="prose prose-sm max-w-none text-[#1B4332]/80 leading-relaxed whitespace-pre-wrap mb-10">
-        {content.body ?? content.summary ?? '본문이 없습니다.'}
+      <div className="font-serif text-lg leading-[1.9] text-primary/75 whitespace-pre-wrap mb-12">
+        {content.body ?? content.excerpt ?? '본문이 없습니다.'}
       </div>
 
       {/* 첨부파일 */}
-      {attachmentsWithUrl.length > 0 && (
+      {content.file_url && content.file_name && (
         <div className="mb-10">
-          <h3 className="text-sm font-semibold text-[#1B4332] mb-3 flex items-center gap-2">
-            <FileText size={14} />
-            첨부파일 ({attachmentsWithUrl.length})
+          <h3 className="text-[10px] font-bold uppercase tracking-widest text-secondary mb-3 flex items-center gap-2">
+            <FileText size={12} />
+            첨부파일
           </h3>
-          <div className="flex flex-col gap-2">
-            {attachmentsWithUrl.map((att) => (
-              <div
-                key={att.id}
-                className="flex items-center justify-between px-4 py-3 bg-white rounded-lg border border-[#1B4332]/10 gap-4"
-              >
-                <div className="min-w-0">
-                  <p className="text-sm text-[#1B4332] truncate">{att.file_name}</p>
-                  {att.file_size && (
-                    <p className="text-xs text-[#1B4332]/40">{formatFileSize(att.file_size)}</p>
-                  )}
-                </div>
-                {att.url ? (
-                  <a
-                    href={att.url}
-                    download={att.file_name}
-                    className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#1B4332] text-[#FEFAE0] text-xs font-medium hover:bg-[#163728] transition-colors"
-                  >
-                    <Download size={12} />
-                    다운로드
-                  </a>
-                ) : (
-                  <span className="text-xs text-[#1B4332]/30">URL 만료</span>
-                )}
-              </div>
-            ))}
+          <div className="flex items-center justify-between px-5 py-4 bg-surface rounded-xl border border-primary/8 gap-4">
+            <p className="text-sm text-primary truncate font-sans">{content.file_name}</p>
+            <a
+              href={content.file_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              download={content.file_name}
+              className="shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-full bg-primary text-cream text-xs font-semibold hover:bg-primary/90 transition-colors"
+            >
+              <Download size={12} />
+              다운로드
+            </a>
           </div>
         </div>
       )}
 
-      {/* 좋아요 버튼 */}
-      <div className="flex justify-center pt-4 border-t border-[#1B4332]/10">
+      <div className="flex justify-center pt-6 border-t border-primary/10">
         <LikeButton
           contentId={content.id}
           initialCount={content.like_count}

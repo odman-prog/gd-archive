@@ -11,6 +11,7 @@ export type Content = {
   view_count: number
   like_count: number
   created_at: string
+  cover_image_url?: string | null
   profiles: { name: string; grade?: number | null; class_num?: number | null } | null
 }
 
@@ -24,8 +25,19 @@ export const CATEGORY_COLORS: Record<string, string> = {
   '기타':       'bg-gray-100 text-gray-600',
 }
 
+export const CATEGORY_GRADIENTS: Record<string, string> = {
+  '기사':       'from-blue-900 to-blue-700',
+  '에세이':     'from-emerald-900 to-emerald-700',
+  '인터뷰':     'from-violet-900 to-violet-700',
+  '시/수필':    'from-pink-900 to-pink-700',
+  '독서감상문': 'from-amber-900 to-amber-700',
+  '수행평가':   'from-orange-900 to-orange-700',
+  '기타':       'from-gray-800 to-gray-600',
+}
+
 export default function ContentCard({ content }: { content: Content }) {
   const categoryColor = CATEGORY_COLORS[content.category ?? ''] ?? CATEGORY_COLORS['기타']
+  const categoryGradient = CATEGORY_GRADIENTS[content.category ?? ''] ?? CATEGORY_GRADIENTS['기타']
   const profile = content.profiles
   const authorMeta = profile
     ? [
@@ -40,31 +52,55 @@ export default function ContentCard({ content }: { content: Content }) {
 
   return (
     <Link href={`/archive/${content.id}`}>
-      <div className="bg-white rounded-xl border border-[#1B4332]/10 p-5 h-full flex flex-col gap-3 hover:shadow-md hover:-translate-y-0.5 hover:border-[#D4A373]/40 transition-all group">
-        <div className="flex items-start justify-between gap-2">
-          {content.category ? (
-            <span className={`shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full ${categoryColor}`}>
-              {content.category}
-            </span>
-          ) : <span />}
-          <span className="text-xs text-[#1B4332]/30 shrink-0">{timeAgo}</span>
+      <div className="bg-white rounded-2xl border border-primary/8 overflow-hidden h-full flex flex-col hover:shadow-lg hover:-translate-y-0.5 hover:border-secondary/30 transition-all duration-300 group">
+        {/* 썸네일 */}
+        <div className="aspect-[16/10] overflow-hidden relative shrink-0">
+          {content.cover_image_url ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={content.cover_image_url}
+              alt={content.title}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            />
+          ) : (
+            <div className={`w-full h-full bg-gradient-to-br ${categoryGradient} flex items-end p-4`}>
+              <span className="text-white/20 font-serif font-bold text-4xl leading-none line-clamp-2 tracking-tight">
+                {content.title}
+              </span>
+            </div>
+          )}
+          {content.cover_image_url && (
+            <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+          )}
         </div>
 
-        <h3 className="font-bold text-[#1B4332] text-base leading-snug group-hover:text-[#D4A373] transition-colors line-clamp-2">
-          {content.title}
-        </h3>
+        {/* 콘텐츠 */}
+        <div className="p-5 flex flex-col gap-2.5 flex-1">
+          <div className="flex items-start justify-between gap-2">
+            {content.category ? (
+              <span className={`shrink-0 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider ${categoryColor}`}>
+                {content.category}
+              </span>
+            ) : <span />}
+            <span className="text-xs text-primary/30 shrink-0">{timeAgo}</span>
+          </div>
 
-        {content.summary && (
-          <p className="text-sm text-[#1B4332]/60 leading-relaxed line-clamp-2 flex-1">
-            {content.summary}
-          </p>
-        )}
+          <h3 className="font-serif font-bold text-primary text-base leading-snug group-hover:text-secondary transition-colors line-clamp-2">
+            {content.title}
+          </h3>
 
-        <div className="flex items-center justify-between text-xs text-[#1B4332]/40 mt-auto pt-3 border-t border-[#1B4332]/5">
-          <span className="font-medium text-[#1B4332]/60 truncate max-w-[60%]">{authorMeta}</span>
-          <div className="flex items-center gap-3 shrink-0">
-            <span className="flex items-center gap-1"><Eye size={12} />{content.view_count.toLocaleString()}</span>
-            <span className="flex items-center gap-1"><Heart size={12} />{content.like_count.toLocaleString()}</span>
+          {content.summary && (
+            <p className="text-sm text-primary/50 leading-relaxed line-clamp-2 flex-1 font-sans">
+              {content.summary}
+            </p>
+          )}
+
+          <div className="flex items-center justify-between text-xs text-primary/40 mt-auto pt-3 border-t border-primary/5">
+            <span className="font-medium text-primary/55 truncate max-w-[60%]">{authorMeta}</span>
+            <div className="flex items-center gap-3 shrink-0">
+              <span className="flex items-center gap-1"><Eye size={11} />{content.view_count.toLocaleString()}</span>
+              <span className="flex items-center gap-1"><Heart size={11} />{content.like_count.toLocaleString()}</span>
+            </div>
           </div>
         </div>
       </div>

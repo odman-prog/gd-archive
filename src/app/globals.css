@@ -1,16 +1,14 @@
-@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --background: #FEFAE0;
-  --foreground: #1a1a1a;
+  --background: #fdf9ee;
+  --foreground: #012d1d;
 }
 
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: 'Manrope', system-ui, sans-serif;
 }

@@ -16,9 +16,7 @@ export default function AuthPage() {
   const supabase = createClient()
   const [tab, setTab] = useState<Tab>('login')
 
-  // 로그인 폼
   const [loginForm, setLoginForm] = useState({ studentId: '', password: '' })
-  // 회원가입 폼
   const [signupForm, setSignupForm] = useState({
     name: '',
     studentId: '',
@@ -33,7 +31,6 @@ export default function AuthPage() {
   const [error, setError] = useState('')
   const [signupDone, setSignupDone] = useState(false)
 
-  // ── 로그인 ──────────────────────────────────────────
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
     setError('')
@@ -59,7 +56,6 @@ export default function AuthPage() {
     router.refresh()
   }
 
-  // ── 회원가입 ─────────────────────────────────────────
   async function handleSignup(e: React.FormEvent) {
     e.preventDefault()
     setError('')
@@ -77,7 +73,6 @@ export default function AuthPage() {
 
     setLoading(true)
 
-    // 서버 API Route를 통해 계정 생성 (이메일 확인 없음)
     const res = await fetch('/api/auth/signup', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -95,78 +90,89 @@ export default function AuthPage() {
     setSignupDone(true)
   }
 
-  // ── 렌더 ─────────────────────────────────────────────
+  const inputClass = 'w-full bg-surface border-0 rounded-lg px-5 py-3.5 text-sm text-primary placeholder:text-primary/30 focus:outline-none focus:ring-2 focus:ring-primary/20'
+
   return (
-    <div className="min-h-[80vh] flex items-center justify-center px-4 py-12">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-lg overflow-hidden border border-[#1B4332]/10">
-
-        {/* 탭 */}
-        <div className="flex">
-          {(['login', 'signup'] as Tab[]).map((t) => (
-            <button
-              key={t}
-              onClick={() => { setTab(t); setError('') }}
-              className={`flex-1 py-4 text-sm font-semibold transition-colors ${
-                tab === t
-                  ? 'bg-[#1B4332] text-[#FEFAE0]'
-                  : 'bg-[#FEFAE0] text-[#1B4332]/50 hover:text-[#1B4332]'
-              }`}
-            >
-              {t === 'login' ? '로그인' : '가입 신청'}
-            </button>
-          ))}
+    <div className="min-h-[calc(100vh-64px)] flex items-stretch">
+      <div className="hidden md:flex md:w-5/12 bg-primary flex-col justify-end p-14 relative">
+        <div>
+          <span className="inline-block px-3 py-1 bg-secondary text-cream text-[10px] font-bold rounded-full mb-8 uppercase tracking-widest">
+            Established
+          </span>
+          <h2 className="text-5xl font-serif leading-tight text-cream mb-5">
+            기록으로<br />피어나는<br />지성
+          </h2>
+          <p className="text-cream/50 text-sm leading-relaxed">
+            광덕고등학교의 모든 창작물과 학술적 성취를 담아내는 디지털 프레스 아카이브에 오신 것을 환영합니다.
+          </p>
         </div>
+      </div>
 
-        <div className="px-8 py-8">
-          {/* 로고 */}
-          <div className="text-center mb-8">
-            <span className="text-3xl">📚</span>
-            <h1 className="mt-2 text-xl font-bold text-[#1B4332]">광덕아카이브</h1>
+      <div className="flex-1 flex items-center justify-center px-6 py-16 bg-cream">
+        <div className="w-full max-w-sm">
+          {/* 탭 */}
+          <div className="flex gap-8 mb-10 border-b border-primary/10">
+            {(['login', 'signup'] as Tab[]).map((t) => (
+              <button
+                key={t}
+                onClick={() => { setTab(t); setError('') }}
+                className={`pb-4 text-lg font-serif font-bold border-b-2 transition-all -mb-px ${
+                  tab === t
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-primary/30 hover:text-primary/60'
+                }`}
+              >
+                {t === 'login' ? '로그인' : '회원가입'}
+              </button>
+            ))}
           </div>
 
           {/* ── 로그인 폼 ── */}
           {tab === 'login' && (
-            <form onSubmit={handleLogin} className="flex flex-col gap-4">
+            <form onSubmit={handleLogin} className="flex flex-col gap-5">
               <div>
-                <label className="block text-sm font-medium text-[#1B4332] mb-1">학번</label>
+                <label className="block text-[10px] font-bold text-primary/40 uppercase tracking-widest mb-2">학번 (Student ID)</label>
                 <input
                   type="text"
                   placeholder="예) 30201"
                   value={loginForm.studentId}
                   onChange={(e) => setLoginForm({ ...loginForm, studentId: e.target.value })}
-                  className="w-full px-4 py-2.5 rounded-lg border border-[#1B4332]/20 bg-[#FEFAE0] focus:outline-none focus:ring-2 focus:ring-[#1B4332]/30 text-sm"
+                  className={inputClass}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-[#1B4332] mb-1">비밀번호</label>
+                <label className="block text-[10px] font-bold text-primary/40 uppercase tracking-widest mb-2">비밀번호 (Password)</label>
                 <div className="relative">
                   <input
                     type={showPassword ? 'text' : 'password'}
-                    placeholder="비밀번호 입력"
+                    placeholder="••••••••"
                     value={loginForm.password}
                     onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
-                    className="w-full px-4 py-2.5 rounded-lg border border-[#1B4332]/20 bg-[#FEFAE0] focus:outline-none focus:ring-2 focus:ring-[#1B4332]/30 text-sm pr-10"
+                    className={`${inputClass} pr-12`}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#1B4332]/40"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-primary/30 hover:text-primary/60"
                   >
                     {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                 </div>
               </div>
 
-              {error && <p className="text-red-500 text-xs">{error}</p>}
+              {error && <p className="text-rose-500 text-xs">{error}</p>}
 
               <button
                 type="submit"
                 disabled={loading}
-                className="mt-2 w-full py-3 rounded-lg bg-[#1B4332] text-[#FEFAE0] font-semibold text-sm hover:bg-[#163728] transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
+                className="w-full bg-gradient-to-r from-primary to-[#1a4432] text-cream py-4 rounded-xl font-bold text-sm shadow-md hover:opacity-95 transition-opacity disabled:opacity-60 flex items-center justify-center gap-2 mt-2"
               >
                 {loading && <Loader2 size={16} className="animate-spin" />}
-                로그인
+                아카이브 입장하기
               </button>
+              <p className="text-center text-xs text-primary/30">
+                비밀번호를 잊으셨나요? 담당 선생님께 재설정을 요청하세요.
+              </p>
             </form>
           )}
 
@@ -174,43 +180,43 @@ export default function AuthPage() {
           {tab === 'signup' && !signupDone && (
             <form onSubmit={handleSignup} className="flex flex-col gap-4">
               <div>
-                <label className="block text-sm font-medium text-[#1B4332] mb-1">이름</label>
+                <label className="block text-[10px] font-bold text-primary/40 uppercase tracking-widest mb-2">이름</label>
                 <input
                   type="text"
                   placeholder="홍길동"
                   value={signupForm.name}
                   onChange={(e) => setSignupForm({ ...signupForm, name: e.target.value })}
-                  className="w-full px-4 py-2.5 rounded-lg border border-[#1B4332]/20 bg-[#FEFAE0] focus:outline-none focus:ring-2 focus:ring-[#1B4332]/30 text-sm"
+                  className={inputClass}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-[#1B4332] mb-1">학번</label>
+                <label className="block text-[10px] font-bold text-primary/40 uppercase tracking-widest mb-2">학번</label>
                 <input
                   type="text"
                   placeholder="예) 30201"
                   value={signupForm.studentId}
                   onChange={(e) => setSignupForm({ ...signupForm, studentId: e.target.value })}
-                  className="w-full px-4 py-2.5 rounded-lg border border-[#1B4332]/20 bg-[#FEFAE0] focus:outline-none focus:ring-2 focus:ring-[#1B4332]/30 text-sm"
+                  className={inputClass}
                 />
               </div>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-3 gap-2">
                 <div>
-                  <label className="block text-sm font-medium text-[#1B4332] mb-1">학년</label>
+                  <label className="block text-[10px] font-bold text-primary/40 uppercase tracking-widest mb-2">학년</label>
                   <select
                     value={signupForm.grade}
                     onChange={(e) => setSignupForm({ ...signupForm, grade: e.target.value })}
-                    className="w-full px-3 py-2.5 rounded-lg border border-[#1B4332]/20 bg-[#FEFAE0] focus:outline-none focus:ring-2 focus:ring-[#1B4332]/30 text-sm"
+                    className={inputClass}
                   >
                     <option value="">학년</option>
                     {[1, 2, 3].map((g) => <option key={g} value={g}>{g}학년</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-[#1B4332] mb-1">반</label>
+                  <label className="block text-[10px] font-bold text-primary/40 uppercase tracking-widest mb-2">반</label>
                   <select
                     value={signupForm.classNum}
                     onChange={(e) => setSignupForm({ ...signupForm, classNum: e.target.value })}
-                    className="w-full px-3 py-2.5 rounded-lg border border-[#1B4332]/20 bg-[#FEFAE0] focus:outline-none focus:ring-2 focus:ring-[#1B4332]/30 text-sm"
+                    className={inputClass}
                   >
                     <option value="">반</option>
                     {Array.from({ length: 10 }, (_, i) => i + 1).map((c) => (
@@ -219,44 +225,44 @@ export default function AuthPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-[#1B4332] mb-1">번호</label>
+                  <label className="block text-[10px] font-bold text-primary/40 uppercase tracking-widest mb-2">번호</label>
                   <input
                     type="number"
-                    placeholder="번호"
+                    placeholder="번"
                     min={1}
                     max={50}
                     value={signupForm.number}
                     onChange={(e) => setSignupForm({ ...signupForm, number: e.target.value })}
-                    className="w-full px-3 py-2.5 rounded-lg border border-[#1B4332]/20 bg-[#FEFAE0] focus:outline-none focus:ring-2 focus:ring-[#1B4332]/30 text-sm"
+                    className={inputClass}
                   />
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-[#1B4332] mb-1">비밀번호 <span className="text-[#1B4332]/40 font-normal">(6자 이상)</span></label>
+                <label className="block text-[10px] font-bold text-primary/40 uppercase tracking-widest mb-2">비밀번호 <span className="normal-case font-normal">(6자 이상)</span></label>
                 <div className="relative">
                   <input
                     type={showPassword ? 'text' : 'password'}
-                    placeholder="비밀번호 입력"
+                    placeholder="••••••••"
                     value={signupForm.password}
                     onChange={(e) => setSignupForm({ ...signupForm, password: e.target.value })}
-                    className="w-full px-4 py-2.5 rounded-lg border border-[#1B4332]/20 bg-[#FEFAE0] focus:outline-none focus:ring-2 focus:ring-[#1B4332]/30 text-sm pr-10"
+                    className={`${inputClass} pr-12`}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#1B4332]/40"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-primary/30 hover:text-primary/60"
                   >
                     {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                 </div>
               </div>
 
-              {error && <p className="text-red-500 text-xs">{error}</p>}
+              {error && <p className="text-rose-500 text-xs">{error}</p>}
 
               <button
                 type="submit"
                 disabled={loading}
-                className="mt-2 w-full py-3 rounded-lg bg-[#1B4332] text-[#FEFAE0] font-semibold text-sm hover:bg-[#163728] transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
+                className="w-full bg-gradient-to-r from-primary to-[#1a4432] text-cream py-4 rounded-xl font-bold text-sm shadow-md hover:opacity-95 transition-opacity disabled:opacity-60 flex items-center justify-center gap-2 mt-1"
               >
                 {loading && <Loader2 size={16} className="animate-spin" />}
                 가입 신청
@@ -266,18 +272,20 @@ export default function AuthPage() {
 
           {/* ── 가입 완료 메시지 ── */}
           {tab === 'signup' && signupDone && (
-            <div className="text-center py-4 flex flex-col items-center gap-4">
-              <div className="w-16 h-16 rounded-full bg-[#D4A373]/20 flex items-center justify-center text-3xl">
-                ✅
+            <div className="text-center py-8 flex flex-col items-center gap-5">
+              <div className="w-16 h-16 rounded-full bg-secondary/10 border border-secondary/20 flex items-center justify-center">
+                <span className="text-2xl">✓</span>
               </div>
-              <h2 className="text-lg font-bold text-[#1B4332]">가입 신청 완료</h2>
-              <p className="text-sm text-[#1B4332]/60 leading-relaxed">
-                담당 선생님 승인 후 이용 가능합니다.<br />
-                승인은 영업일 기준 1~2일 소요될 수 있습니다.
-              </p>
+              <div>
+                <h2 className="text-xl font-serif font-bold text-primary mb-2">가입 신청 완료</h2>
+                <p className="text-sm text-primary/50 leading-relaxed">
+                  담당 선생님 승인 후 이용 가능합니다.<br />
+                  승인은 영업일 기준 1~2일 소요될 수 있습니다.
+                </p>
+              </div>
               <button
                 onClick={() => { setTab('login'); setSignupDone(false) }}
-                className="mt-2 px-6 py-2.5 rounded-lg border border-[#D4A373] text-[#D4A373] text-sm font-medium hover:bg-[#D4A373] hover:text-[#1B4332] transition-colors"
+                className="px-6 py-2.5 rounded-full border border-primary/20 text-primary text-sm font-medium hover:bg-surface transition-colors"
               >
                 로그인으로 돌아가기
               </button>
