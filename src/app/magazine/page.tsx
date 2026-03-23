@@ -1,6 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
 import MagazineClient from './MagazineClient'
 
+export const revalidate = 60 // 60초 ISR 캐싱
+
 export default async function MagazinePage() {
   const supabase = createClient()
 

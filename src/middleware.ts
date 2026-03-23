@@ -29,15 +29,12 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  // 인증이 필요한 경로에만 미들웨어 실행 (공개 페이지 제외)
+  // UI 경로에만 미들웨어 실행 (세션 쿠키 갱신 목적)
+  // API 경로는 각 route handler에서 직접 인증하므로 제외
   matcher: [
     '/admin/:path*',
     '/mypage/:path*',
     '/dashboard/:path*',
     '/write/:path*',
-    '/api/admin/:path*',
-    '/api/content/:path*',
-    '/api/dashboard/:path*',
-    '/api/user/:path*',
   ],
 }

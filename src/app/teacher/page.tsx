@@ -3,6 +3,8 @@ import { createClient } from '@/lib/supabase/server'
 import { format } from 'date-fns'
 import { ko } from 'date-fns/locale'
 
+export const revalidate = 60 // 60초 ISR 캐싱
+
 type Post = {
   id: string
   title: string

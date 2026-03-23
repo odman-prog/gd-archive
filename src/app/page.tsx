@@ -4,6 +4,8 @@ import { ko } from 'date-fns/locale'
 import { createClient } from '@/lib/supabase/server'
 import ContentCard from '@/components/ContentCard'
 
+export const revalidate = 60 // 60초 ISR 캐싱
+
 async function getStats(supabase: ReturnType<typeof createClient>) {
   const [contents, profiles] = await Promise.all([
     supabase.from('contents').select('id', { count: 'exact', head: true }).eq('status', 'published'),
