@@ -22,7 +22,7 @@ type Profile = {
   name: string
   student_id: string
   grade: number
-  class_num: number
+  class: number
   number: number
   role: string
   status: string
@@ -58,11 +58,15 @@ const supabase = createClient()
 
 export default function AdminClient({
   teacherName,
+  currentUserId,
+  isSuperAdmin,
   initialPending,
   initialUsers,
   initialStats,
 }: {
   teacherName: string
+  currentUserId: string
+  isSuperAdmin: boolean
   initialPending: Profile[]
   initialUsers: Profile[]
   initialStats: Stats
@@ -172,6 +176,28 @@ export default function AdminClient({
     setUsers((u) => u.map((user) => user.id === id ? { ...user, role } : user))
   }
 
+  const [editingClassId, setEditingClassId] = useState<string | null>(null)
+  const [classForm, setClassForm] = useState({ grade: '', classNum: '', number: '' })
+
+  function startEditClass(u: Profile) {
+    setEditingClassId(u.id)
+    setClassForm({ grade: String(u.grade ?? ''), classNum: String(u.class ?? ''), number: String(u.number ?? '') })
+  }
+
+  async function saveClassInfo(id: string) {
+    const { error } = await supabase.from('profiles').update({
+      grade: Number(classForm.grade),
+      class: Number(classForm.classNum),
+      number: Number(classForm.number),
+    }).eq('id', id)
+    if (error) { alert('저장 실패: ' + error.message); return }
+    setUsers((u) => u.map((user) => user.id === id
+      ? { ...user, grade: Number(classForm.grade), class: Number(classForm.classNum), number: Number(classForm.number) }
+      : user
+    ))
+    setEditingClassId(null)
+  }
+
   async function handleDeleteUser(u: Profile) {
     if (!confirm(`「${u.name}」 (${u.student_id}) 계정을 완전히 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`)) return
     setLoadingId(u.id)
@@ -238,7 +264,7 @@ export default function AdminClient({
         u.name.toLowerCase().includes(q) ||
         u.student_id.includes(q) ||
         String(u.grade).includes(q) ||
-        String(u.class_num).includes(q)
+        String(u.class).includes(q)
     )
   }, [users, search])
 
@@ -535,7 +561,7 @@ export default function AdminClient({
                             <span className="text-xs text-primary/40 font-sans">{p.student_id}</span>
                           </div>
                           <p className="text-xs text-primary/50 mt-0.5 font-sans">
-                            {p.grade}학년 {p.class_num}반 {p.number}번
+                            {p.grade}학년 {p.class}반 {p.number}번
                             <span className="ml-2 text-primary/30">
                               {format(new Date(p.created_at), 'yyyy.MM.dd', { locale: ko })} 신청
                             </span>
@@ -639,7 +665,34 @@ export default function AdminClient({
                             </div>
                           </td>
                           <td className="px-6 py-4 hidden md:table-cell">
-                            <span className="text-sm text-primary/60 font-sans">{u.grade}-{u.class_num}</span>
+                            {editingClassId === u.id ? (
+                              <div className="flex items-center gap-1">
+                                <select value={classForm.grade} onChange={(e) => setClassForm({ ...classForm, grade: e.target.value })}
+                                  className="px-1.5 py-1 rounded border border-primary/20 text-xs font-sans focus:outline-none w-16">
+                                  {[1,2,3].map((g) => <option key={g} value={g}>{g}학년</option>)}
+                                </select>
+                                <select value={classForm.classNum} onChange={(e) => setClassForm({ ...classForm, classNum: e.target.value })}
+                                  className="px-1.5 py-1 rounded border border-primary/20 text-xs font-sans focus:outline-none w-14">
+                                  {Array.from({length:10},(_,i)=>i+1).map((c) => <option key={c} value={c}>{c}반</option>)}
+                                </select>
+                                <input type="number" min={1} max={50} value={classForm.number}
+                                  onChange={(e) => setClassForm({ ...classForm, number: e.target.value })}
+                                  className="px-1.5 py-1 rounded border border-primary/20 text-xs font-sans focus:outline-none w-14" placeholder="번호" />
+                                <button onClick={() => saveClassInfo(u.id)} className="text-emerald-600 hover:text-emerald-700">
+                                  <span className="material-symbols-outlined text-[16px]">check</span>
+                                </button>
+                                <button onClick={() => setEditingClassId(null)} className="text-primary/30 hover:text-primary/60">
+                                  <span className="material-symbols-outlined text-[16px]">close</span>
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-2 group/cell">
+                                <span className="text-sm text-primary/60 font-sans">{u.grade}학년 {u.class}반 {u.number}번</span>
+                                <button onClick={() => startEditClass(u)} className="opacity-0 group-hover/cell:opacity-100 transition-opacity text-primary/30 hover:text-secondary">
+                                  <span className="material-symbols-outlined text-[14px]">edit</span>
+                                </button>
+                              </div>
+                            )}
                           </td>
                           <td className="px-6 py-4">
                             {u.role === 'teacher' ? (
@@ -674,7 +727,7 @@ export default function AdminClient({
                           </td>
                           <td className="px-6 py-4 text-right">
                             <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                              {u.role !== 'teacher' && (
+                              {u.id !== currentUserId && (u.role !== 'teacher' || isSuperAdmin) && (
                                 <button
                                   onClick={() => handleDeleteUser(u)}
                                   disabled={loadingId === u.id}

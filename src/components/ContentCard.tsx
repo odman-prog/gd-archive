@@ -12,7 +12,7 @@ export type Content = {
   like_count: number
   created_at: string
   cover_image_url?: string | null
-  profiles: { name: string; grade?: number | null; class_num?: number | null } | null
+  profiles: { name: string; grade?: number | null; class?: number | null } | null
 }
 
 export const CATEGORY_COLORS: Record<string, string> = {
@@ -42,7 +42,7 @@ export default function ContentCard({ content }: { content: Content }) {
   const authorMeta = profile
     ? [
       profile.name,
-      profile.grade && profile.class_num ? `${profile.grade}-${profile.class_num}` : null,
+      profile.grade && profile.class ? `${profile.grade}-${profile.class}` : null,
     ]
       .filter(Boolean)
       .join(' · ')

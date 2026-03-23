@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { FileText, Eye, Heart, CheckCircle2, PenLine } from 'lucide-react'
 import MyContentList from './MyContentList'
+import ProfileEditor from './ProfileEditor'
 
 export default async function MyPage() {
   const supabase = createClient()
@@ -10,7 +11,7 @@ export default async function MyPage() {
   if (!user) redirect('/auth')
 
   const [{ data: profile }, { data: contents }] = await Promise.all([
-    supabase.from('profiles').select('name, student_id, grade, class_num, number, status, role').eq('id', user.id).single(),
+    supabase.from('profiles').select('name, student_id, grade, class, number, status, role').eq('id', user.id).single(),
     supabase.from('contents')
       .select('id, title, category, status, view_count, like_count, created_at, reviewer_comment')
       .eq('author_id', user.id)
@@ -43,8 +44,14 @@ export default async function MyPage() {
             )}
           </div>
           <p className="text-sm text-primary/45 mt-1 font-sans">
-            {profile.grade ? `${profile.grade}학년` : ''}{profile.class_num ? ` ${profile.class_num}반` : ''}{profile.number ? ` ${profile.number}번` : ''}{profile.student_id ? ` · 학번 ${profile.student_id}` : ''}
+            {profile.student_id ? `아이디: ${profile.student_id}` : ''}
           </p>
+          <ProfileEditor
+            userId={user.id}
+            grade={profile.grade ?? null}
+            classNum={profile.class ?? null}
+            number={profile.number ?? null}
+          />
         </div>
       </div>
 

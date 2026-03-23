@@ -6,7 +6,7 @@ import { useDropzone, FileRejection } from 'react-dropzone'
 import { createClient } from '@/lib/supabase/client'
 import { Upload, X, FileText, CheckCircle2, Loader2, Save, Send, Paperclip, ImagePlus } from 'lucide-react'
 
-const CATEGORIES = ['기사', '에세이', '인터뷰', '시/수필', '독서감상문', '수행평가']
+const CATEGORIES = ['기사', '에세이', '인터뷰', '시/수필', '독서감상문', '수행평가', '교사의 서재']
 const ACCEPT_TYPES = {
   'application/pdf': ['.pdf'],
   'application/vnd.hancom.hwpx': ['.hwpx'],

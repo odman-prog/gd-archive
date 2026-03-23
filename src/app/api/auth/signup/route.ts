@@ -13,28 +13,31 @@ function getAdminClient() {
 
 export async function POST(req: NextRequest) {
   try {
-    const { name, studentId, grade, classNum, number, password } = await req.json()
+    const { name, loginId, grade, classNum, number, password } = await req.json()
 
     // 기본 유효성 검사
-    if (!name || !studentId || !grade || !classNum || !number || !password) {
+    if (!name || !loginId || !grade || !classNum || !number || !password) {
       return NextResponse.json({ error: '모든 항목을 입력해주세요.' }, { status: 400 })
+    }
+    if (!/^[a-zA-Z0-9_]{3,20}$/.test(loginId)) {
+      return NextResponse.json({ error: '아이디는 영문·숫자·_만 사용 가능하며 3~20자입니다.' }, { status: 400 })
     }
     if (password.length < 6) {
       return NextResponse.json({ error: '비밀번호는 6자 이상이어야 합니다.' }, { status: 400 })
     }
 
     const supabase = getAdminClient()
-    const email = `${studentId}@gd-archive.internal`
+    const email = `${loginId}@gd-archive.internal`
 
-    // 중복 학번 체크
+    // 중복 아이디 체크
     const { data: existing } = await supabase
       .from('profiles')
       .select('id')
-      .eq('student_id', studentId)
+      .eq('student_id', loginId)
       .maybeSingle()
 
     if (existing) {
-      return NextResponse.json({ error: '이미 가입된 학번입니다.' }, { status: 409 })
+      return NextResponse.json({ error: '이미 사용 중인 아이디입니다.' }, { status: 409 })
     }
 
     // Auth 계정 생성 (이메일 확인 없이 바로 활성화)
@@ -52,16 +55,17 @@ export async function POST(req: NextRequest) {
     }
 
     // profiles 테이블 저장
-    const { error: profileError } = await supabase.from('profiles').insert({
+    const profileData: Record<string, unknown> = {
       id: authData.user.id,
       name,
-      student_id: studentId,
+      student_id: loginId,
       grade: Number(grade),
-      class_num: Number(classNum),
       number: Number(number),
       status: 'pending',
       role: 'student',
-    })
+    }
+    profileData['class'] = Number(classNum)
+    const { error: profileError } = await supabase.from('profiles').insert(profileData)
 
     if (profileError) {
       // 롤백: 생성된 auth 계정 삭제

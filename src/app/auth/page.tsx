@@ -8,8 +8,8 @@ import { Eye, EyeOff, Loader2 } from 'lucide-react'
 
 type Tab = 'login' | 'signup'
 
-function toEmail(studentId: string) {
-  return `${studentId}@gd-archive.internal`
+function toEmail(loginId: string) {
+  return `${loginId}@gd-archive.internal`
 }
 
 export default function AuthPage() {
@@ -17,10 +17,10 @@ export default function AuthPage() {
   const supabase = createClient()
   const [tab, setTab] = useState<Tab>('login')
 
-  const [loginForm, setLoginForm] = useState({ studentId: '', password: '' })
+  const [loginForm, setLoginForm] = useState({ loginId: '', password: '' })
   const [signupForm, setSignupForm] = useState({
     name: '',
-    studentId: '',
+    loginId: '',
     grade: '',
     classNum: '',
     number: '',
@@ -36,20 +36,20 @@ export default function AuthPage() {
     e.preventDefault()
     setError('')
 
-    if (!loginForm.studentId || !loginForm.password) {
-      setError('학번과 비밀번호를 입력해주세요.')
+    if (!loginForm.loginId || !loginForm.password) {
+      setError('아이디와 비밀번호를 입력해주세요.')
       return
     }
 
     setLoading(true)
     const { error } = await supabase.auth.signInWithPassword({
-      email: toEmail(loginForm.studentId),
+      email: toEmail(loginForm.loginId),
       password: loginForm.password,
     })
     setLoading(false)
 
     if (error) {
-      setError('학번 또는 비밀번호가 올바르지 않습니다.')
+      setError('아이디 또는 비밀번호가 올바르지 않습니다.')
       return
     }
 
@@ -61,10 +61,14 @@ export default function AuthPage() {
     e.preventDefault()
     setError('')
 
-    const { name, studentId, grade, classNum, number, password } = signupForm
+    const { name, loginId, grade, classNum, number, password } = signupForm
 
-    if (!name || !studentId || !grade || !classNum || !number || !password) {
+    if (!name || !loginId || !grade || !classNum || !number || !password) {
       setError('모든 항목을 입력해주세요.')
+      return
+    }
+    if (!/^[a-zA-Z0-9_]{3,20}$/.test(loginId)) {
+      setError('아이디는 영문·숫자·_만 사용 가능하며 3~20자입니다.')
       return
     }
     if (password.length < 6) {
@@ -77,7 +81,7 @@ export default function AuthPage() {
     const res = await fetch('/api/auth/signup', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, studentId, grade, classNum, number, password }),
+      body: JSON.stringify({ name, loginId, grade, classNum, number, password }),
     })
 
     const result = await res.json()
@@ -139,12 +143,12 @@ export default function AuthPage() {
           {tab === 'login' && (
             <form onSubmit={handleLogin} className="flex flex-col gap-5">
               <div>
-                <label className="block text-[10px] font-bold text-primary/40 uppercase tracking-widest mb-2">학번 (Student ID)</label>
+                <label className="block text-[10px] font-bold text-primary/40 uppercase tracking-widest mb-2">아이디 (ID)</label>
                 <input
                   type="text"
-                  placeholder="예) 30201"
-                  value={loginForm.studentId}
-                  onChange={(e) => setLoginForm({ ...loginForm, studentId: e.target.value })}
+                  placeholder="가입 시 설정한 아이디"
+                  value={loginForm.loginId}
+                  onChange={(e) => setLoginForm({ ...loginForm, loginId: e.target.value })}
                   className={inputClass}
                 />
               </div>
@@ -179,7 +183,7 @@ export default function AuthPage() {
                 아카이브 입장하기
               </button>
               <p className="text-center text-xs text-primary/30">
-                학번이나 비밀번호를 잊으셨나요?{' '}
+                아이디나 비밀번호를 잊으셨나요?{' '}
                 <Link href="/auth/recover" className="text-secondary hover:underline font-medium">
                   계정 정보 찾기
                 </Link>
@@ -201,12 +205,12 @@ export default function AuthPage() {
                 />
               </div>
               <div>
-                <label className="block text-[10px] font-bold text-primary/40 uppercase tracking-widest mb-2">학번</label>
+                <label className="block text-[10px] font-bold text-primary/40 uppercase tracking-widest mb-2">아이디 <span className="normal-case font-normal text-primary/30">(영문·숫자·_ / 3~20자)</span></label>
                 <input
                   type="text"
-                  placeholder="예) 30201"
-                  value={signupForm.studentId}
-                  onChange={(e) => setSignupForm({ ...signupForm, studentId: e.target.value })}
+                  placeholder="예) gildong_hong"
+                  value={signupForm.loginId}
+                  onChange={(e) => setSignupForm({ ...signupForm, loginId: e.target.value })}
                   className={inputClass}
                 />
               </div>

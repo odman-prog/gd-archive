@@ -74,7 +74,7 @@ export default async function DashboardPage() {
 
   // 교사용 제출 현황
   type StudentStat = {
-    id: string; name: string; grade: number | null; class_num: number | null
+    id: string; name: string; grade: number | null; class: number | null
     submitted: number; published: number; revision: number; rejected: number; draft: number
   }
   let studentStats: StudentStat[] = []
@@ -82,7 +82,7 @@ export default async function DashboardPage() {
   if (profile.role === 'teacher') {
     const { data: allStudents } = await supabase
       .from('profiles')
-      .select('id, name, grade, class_num')
+      .select('id, name, grade, class')
       .eq('role', 'student')
       .eq('status', 'approved')
       .order('grade')
@@ -94,7 +94,7 @@ export default async function DashboardPage() {
         .select('author_id, status')
         .in('author_id', studentIds)
 
-      const statMap: Record<string, Omit<StudentStat, 'id' | 'name' | 'grade' | 'class_num'>> = {}
+      const statMap: Record<string, Omit<StudentStat, 'id' | 'name' | 'grade' | 'class'>> = {}
       ;(allContents ?? []).forEach(({ author_id, status }) => {
         if (!statMap[author_id]) statMap[author_id] = { submitted: 0, published: 0, revision: 0, rejected: 0, draft: 0 }
         if (status === 'submitted') statMap[author_id].submitted++
@@ -105,7 +105,7 @@ export default async function DashboardPage() {
       })
 
       studentStats = allStudents.map((s) => ({
-        id: s.id, name: s.name, grade: s.grade ?? null, class_num: s.class_num ?? null,
+        id: s.id, name: s.name, grade: s.grade ?? null, class: s.class ?? null,
         ...(statMap[s.id] ?? { submitted: 0, published: 0, revision: 0, rejected: 0, draft: 0 }),
       }))
     }

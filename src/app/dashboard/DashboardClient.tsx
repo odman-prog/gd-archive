@@ -26,7 +26,7 @@ type Item = {
 }
 
 type StudentStat = {
-  id: string; name: string; grade: number | null; class_num: number | null
+  id: string; name: string; grade: number | null; class: number | null
   submitted: number; published: number; revision: number; rejected: number; draft: number
 }
 
@@ -291,7 +291,7 @@ export default function DashboardClient({
                     <div>
                       <p className="text-sm font-semibold text-[#012d1d]">{s.name}</p>
                       <p className="text-xs text-[#012d1d]/40 mt-0.5">
-                        {s.grade ? `${s.grade}학년` : ''}{s.class_num ? ` ${s.class_num}반` : ''}{total > 0 ? ` · 총 ${total}편` : ' · 미제출'}
+                        {s.grade ? `${s.grade}학년` : ''}{s.class ? ` ${s.class}반` : ''}{total > 0 ? ` · 총 ${total}편` : ' · 미제출'}
                       </p>
                     </div>
                     <span className={`text-center text-sm font-semibold ${s.submitted > 0 ? 'text-amber-500' : 'text-[#012d1d]/20'}`}>{s.submitted || '—'}</span>

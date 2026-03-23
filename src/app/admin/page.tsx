@@ -11,7 +11,7 @@ export default async function AdminPage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role, name')
+    .select('role, name, student_id')
     .eq('id', user.id)
     .single()
 
@@ -30,14 +30,14 @@ export default async function AdminPage() {
   // 승인 대기 목록
   const { data: pendingProfiles } = await supabase
     .from('profiles')
-    .select('id, name, student_id, grade, class_num, number, role, status, created_at')
+    .select('id, name, student_id, grade, class, number, role, status, created_at')
     .eq('status', 'pending')
     .order('created_at', { ascending: true })
 
   // 전체 사용자 (teacher 제외)
   const { data: allUsers } = await supabase
     .from('profiles')
-    .select('id, name, student_id, grade, class_num, number, role, status, created_at')
+    .select('id, name, student_id, grade, class, number, role, status, created_at')
     .neq('status', 'pending')
     .order('created_at', { ascending: false })
 
@@ -55,6 +55,8 @@ export default async function AdminPage() {
   return (
     <AdminClient
       teacherName={profile.name}
+      currentUserId={user.id}
+      isSuperAdmin={profile.student_id === 'teacher01'}
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       initialPending={(pendingProfiles ?? []) as any}
       // eslint-disable-next-line @typescript-eslint/no-explicit-any

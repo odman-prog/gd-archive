@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
     const admin = getAdminClient()
 
     // 이메일 형식으로 변환 (loginId@school.internal)
-    const email = `${loginId.trim()}@school.internal`
+    const email = `${loginId.trim()}@gd-archive.internal`
 
     // auth user 생성
     const { data: authData, error: authError } = await admin.auth.admin.createUser({
@@ -48,16 +48,17 @@ export async function POST(req: NextRequest) {
     const newUserId = authData.user.id
 
     // profiles 테이블에 교사 프로필 생성
-    const { error: profileError } = await admin.from('profiles').insert({
+    const teacherData: Record<string, unknown> = {
       id: newUserId,
       name: name.trim(),
       student_id: loginId.trim(),
       grade: null,
-      class_num: null,
       number: null,
       role: 'teacher',
       status: 'approved',
-    })
+    }
+    teacherData['class'] = null
+    const { error: profileError } = await admin.from('profiles').insert(teacherData)
 
     if (profileError) {
       // 프로필 생성 실패 시 auth user도 롤백
@@ -75,7 +76,7 @@ export async function POST(req: NextRequest) {
         status: 'approved',
         created_at: new Date().toISOString(),
         grade: null,
-        class_num: null,
+        class: null,
         number: null,
       },
     })

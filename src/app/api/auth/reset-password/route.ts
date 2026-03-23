@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
       .eq('student_id', studentId.trim())
       .eq('name', name.trim())
       .eq('grade', Number(grade))
-      .eq('class_num', Number(classNum))
+      .eq('class', Number(classNum))
       .eq('number', Number(number))
       .maybeSingle()
 
