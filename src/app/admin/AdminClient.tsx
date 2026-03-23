@@ -277,7 +277,7 @@ export default function AdminClient({
     const cls = users
       .filter((u) => u.role !== 'teacher' && u.grade === grade && u.class != null)
       .map((u) => u.class)
-    return [...new Set(cls)].sort((a, b) => a - b)
+    return Array.from(new Set(cls)).sort((a, b) => a - b)
   }
 
   function getGradeUsers(grade: number) {
