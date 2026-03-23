@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { FileText, Eye, Heart, CheckCircle2, PenLine } from 'lucide-react'
 import MyContentList from './MyContentList'
 import ProfileEditor from './ProfileEditor'
+import DeleteAccountButton from './DeleteAccountButton'
 
 export default async function MyPage() {
   const supabase = createClient()
@@ -52,6 +53,9 @@ export default async function MyPage() {
             classNum={profile.class ?? null}
             number={profile.number ?? null}
           />
+          <div className="mt-3 pt-2 flex justify-end">
+            <DeleteAccountButton />
+          </div>
         </div>
       </div>
 

@@ -32,12 +32,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: '교사 계정 삭제 권한이 없습니다.' }, { status: 403 })
     }
 
-    // profiles 삭제 (auth.users cascade 전에 먼저)
+    // 연관 데이터 먼저 삭제 (FK 제약 해제)
+    await admin.from('likes').delete().eq('user_id', userId)
+    await admin.from('contents').delete().eq('author_id', userId)
     await admin.from('profiles').delete().eq('id', userId)
 
-    // auth.users 삭제
-    const { error } = await admin.auth.admin.deleteUser(userId)
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    // auth.users 삭제 — 반드시 성공해야 트리거로 profile이 재생성되지 않음
+    const { error: authError } = await admin.auth.admin.deleteUser(userId)
+    if (authError) {
+      // auth 삭제 실패 시 profile도 복원되므로 실패로 처리
+      return NextResponse.json({ error: 'auth 계정 삭제 실패: ' + authError.message }, { status: 500 })
+    }
 
     return NextResponse.json({ success: true })
   } catch (e: unknown) {

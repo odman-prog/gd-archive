@@ -79,7 +79,7 @@ export default function ProfileEditor({ userId, grade, classNum, number }: Props
             </select>
             <select value={form.classNum} onChange={(e) => setForm({ ...form, classNum: e.target.value })} className={selectClass}>
               <option value="">반</option>
-              {Array.from({ length: 10 }, (_, i) => i + 1).map((c) => <option key={c} value={c}>{c}반</option>)}
+              {Array.from({ length: 11 }, (_, i) => i + 1).map((c) => <option key={c} value={c}>{c}반</option>)}
             </select>
             <input
               type="number" min={1} max={50}

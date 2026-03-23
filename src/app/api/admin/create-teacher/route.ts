@@ -52,12 +52,12 @@ export async function POST(req: NextRequest) {
       id: newUserId,
       name: name.trim(),
       student_id: loginId.trim(),
-      grade: null,
-      number: null,
+      grade: 0,
+      number: 0,
       role: 'teacher',
       status: 'approved',
     }
-    teacherData['class'] = null
+    teacherData['class'] = 0
     const { error: profileError } = await admin.from('profiles').insert(teacherData)
 
     if (profileError) {
@@ -75,9 +75,9 @@ export async function POST(req: NextRequest) {
         role: 'teacher',
         status: 'approved',
         created_at: new Date().toISOString(),
-        grade: null,
-        class: null,
-        number: null,
+        grade: 0,
+        class: 0,
+        number: 0,
       },
     })
   } catch (e: unknown) {

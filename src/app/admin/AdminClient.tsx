@@ -206,7 +206,7 @@ export default function AdminClient({
 
   function startEditClass(u: Profile) {
     setEditingClassId(u.id)
-    setClassForm({ grade: String(u.grade ?? ''), classNum: String(u.class ?? ''), number: String(u.number ?? '') })
+    setClassForm({ grade: String(u.grade ?? 1), classNum: String(normalizeClass(u.class)), number: String(u.number ?? '') })
   }
 
   async function saveClassInfo(id: string) {
@@ -281,10 +281,14 @@ export default function AdminClient({
     }
   }
 
+  function normalizeClass(c: number | null | undefined): number {
+    return c != null && c > 0 ? c : 1
+  }
+
   function getGradeClasses(grade: number) {
     const cls = users
       .filter((u) => u.role !== 'teacher' && u.grade === grade && u.class != null)
-      .map((u) => u.class)
+      .map((u) => normalizeClass(u.class))
     return Array.from(new Set(cls)).sort((a, b) => a - b)
   }
 
@@ -292,12 +296,17 @@ export default function AdminClient({
     const q = search.trim().toLowerCase()
     const ct = classTabs[String(grade)]
     let list = users.filter((u) => u.role !== 'teacher' && u.grade === grade)
-    if (ct !== 'all') list = list.filter((u) => u.class === ct)
+    if (ct !== 'all') list = list.filter((u) => normalizeClass(u.class) === ct)
     if (q) list = list.filter((u) => u.name.toLowerCase().includes(q) || u.student_id.includes(q))
-    return [...list].sort((a, b) => (a.class ?? 0) - (b.class ?? 0) || (a.number ?? 0) - (b.number ?? 0))
+    return [...list].sort((a, b) => (normalizeClass(a.class)) - (normalizeClass(b.class)) || (a.number ?? 0) - (b.number ?? 0))
   }
 
   const teacherUsers = useMemo(() => users.filter((u) => u.role === 'teacher'), [users])
+
+  const unclassifiedUsers = useMemo(() => [
+    ...users.filter((u) => u.role !== 'teacher' && ![1, 2, 3].includes(u.grade)),
+    ...pending.filter((u) => u.role !== 'teacher' && ![1, 2, 3].includes(u.grade)),
+  ], [users, pending])
 
   async function handleBulkDelete(grade: number) {
     const ct = classTabs[String(grade)]
@@ -622,7 +631,7 @@ export default function AdminClient({
                             <span className="text-xs text-primary/40 font-sans">{p.student_id}</span>
                           </div>
                           <p className="text-xs text-primary/50 mt-0.5 font-sans">
-                            {p.grade}학년 {p.class}반 {p.number}번
+                            {p.grade}학년 {normalizeClass(p.class)}반 {p.number}번
                             <span className="ml-2 text-primary/30">
                               {format(new Date(p.created_at), 'yyyy.MM.dd', { locale: ko })} 신청
                             </span>
@@ -760,7 +769,7 @@ export default function AdminClient({
                                       </select>
                                       <select value={classForm.classNum} onChange={(e) => setClassForm({ ...classForm, classNum: e.target.value })}
                                         className="px-1.5 py-1 rounded border border-primary/20 text-xs font-sans focus:outline-none w-14">
-                                        {Array.from({length:10},(_,i)=>i+1).map((c) => <option key={c} value={c}>{c}반</option>)}
+                                        {Array.from({length:11},(_,i)=>i+1).map((c) => <option key={c} value={c}>{c}반</option>)}
                                       </select>
                                       <input type="number" min={1} max={50} value={classForm.number}
                                         onChange={(e) => setClassForm({ ...classForm, number: e.target.value })}
@@ -774,7 +783,7 @@ export default function AdminClient({
                                     </div>
                                   ) : (
                                     <div className="flex items-center gap-2 group/cell">
-                                      <span className="text-sm text-primary/60 font-sans">{u.class}반 {u.number}번</span>
+                                      <span className="text-sm text-primary/60 font-sans">{normalizeClass(u.class)}반 {u.number}번</span>
                                       <button onClick={() => startEditClass(u)} className="opacity-0 group-hover/cell:opacity-100 transition-opacity text-primary/30 hover:text-secondary">
                                         <span className="material-symbols-outlined text-[14px]">edit</span>
                                       </button>
@@ -818,6 +827,75 @@ export default function AdminClient({
                 </div>
               )
             })}
+
+            {/* 미분류 계정 (grade가 1·2·3이 아닌 학생) */}
+            {unclassifiedUsers.length > 0 && (
+              <div>
+                <h3 className="font-serif text-lg font-semibold text-primary mb-3 flex items-center gap-2">
+                  미분류 계정
+                  <span className="text-sm font-sans font-normal text-primary/40">({unclassifiedUsers.length}명)</span>
+                </h3>
+                <div className="bg-white rounded-2xl overflow-hidden shadow-sm" style={{ boxShadow: '0 4px 20px -4px rgba(1,45,29,0.08)' }}>
+                  <table className="w-full text-left border-collapse">
+                    <thead className="bg-surface border-b border-primary/5">
+                      <tr>
+                        <th className="px-6 py-3 text-[10px] font-extrabold uppercase tracking-widest text-primary/60 font-sans">회원 정보</th>
+                        <th className="px-6 py-3 text-[10px] font-extrabold uppercase tracking-widest text-primary/60 font-sans hidden md:table-cell">학년 · 반 · 번호</th>
+                        <th className="px-6 py-3 text-right"></th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-primary/5">
+                      {unclassifiedUsers.map((u) => (
+                        <tr key={u.id} className="hover:bg-surface/40 transition-colors group">
+                          <td className="px-6 py-3">
+                            <div className="flex items-center gap-3">
+                              <div className="w-9 h-9 rounded-full bg-surface-container flex items-center justify-center text-primary font-bold font-serif text-sm shrink-0">
+                                {u.name.slice(0, 2)}
+                              </div>
+                              <div>
+                                <p className="font-sans font-semibold text-primary text-sm">{u.name}</p>
+                                <p className="text-xs text-primary/40 font-sans">{u.student_id}</p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-3 hidden md:table-cell">
+                            <span className="text-sm text-primary/60 font-sans">
+                              {u.grade ?? '—'}학년 {normalizeClass(u.class)}반 {u.number ?? '—'}번
+                            </span>
+                          </td>
+                          <td className="px-6 py-3 text-right">
+                            <div className="flex justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button
+                                onClick={async () => {
+                                  if (!confirm(`「${u.name}」 계정을 완전히 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`)) return
+                                  setLoadingId(u.id)
+                                  const res = await fetch('/api/admin/delete-user', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ userId: u.id }),
+                                  })
+                                  setLoadingId(null)
+                                  if (!res.ok) {
+                                    const json = await res.json()
+                                    alert('삭제 실패: ' + json.error)
+                                    return
+                                  }
+                                  setUsers((prev) => prev.filter((x) => x.id !== u.id))
+                                  setPending((prev) => prev.filter((x) => x.id !== u.id))
+                                }}
+                                disabled={loadingId === u.id}
+                                className="p-2 rounded-lg text-primary/30 hover:text-error hover:bg-error-container/20 transition-colors disabled:opacity-50">
+                                {loadingId === u.id ? <Loader2 size={14} className="animate-spin" /> : <span className="material-symbols-outlined text-[17px]">delete</span>}
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
 
             {/* 교사 표 */}
             {teacherUsers.length > 0 && (

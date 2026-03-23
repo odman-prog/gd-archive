@@ -234,7 +234,7 @@ export default function AuthPage() {
                     className={inputClass}
                   >
                     <option value="">반</option>
-                    {Array.from({ length: 10 }, (_, i) => i + 1).map((c) => (
+                    {Array.from({ length: 11 }, (_, i) => i + 1).map((c) => (
                       <option key={c} value={c}>{c}반</option>
                     ))}
                   </select>

@@ -136,7 +136,7 @@ export default function RecoverPage() {
                     className={selectClass}
                   >
                     <option value="">반</option>
-                    {Array.from({ length: 10 }, (_, i) => i + 1).map((c) => (
+                    {Array.from({ length: 11 }, (_, i) => i + 1).map((c) => (
                       <option key={c} value={c}>{c}반</option>
                     ))}
                   </select>
@@ -274,7 +274,7 @@ export default function RecoverPage() {
                               <option value="">{['학년', '반'][i]}</option>
                               {field === 'grade'
                                 ? [1, 2, 3].map((g) => <option key={g} value={g}>{g}학년</option>)
-                                : Array.from({ length: 10 }, (_, k) => k + 1).map((c) => <option key={c} value={c}>{c}반</option>)
+                                : Array.from({ length: 11 }, (_, k) => k + 1).map((c) => <option key={c} value={c}>{c}반</option>)
                               }
                             </select>
                             <span className="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-outline text-[16px]">expand_more</span>
