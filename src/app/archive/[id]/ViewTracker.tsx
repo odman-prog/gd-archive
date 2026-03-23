@@ -1,21 +1,18 @@
 'use client'
 
 import { useEffect } from 'react'
-import { createClient } from '@/lib/supabase/client'
 
-export default function ViewTracker({ contentId, currentViews }: { contentId: string; currentViews: number }) {
+export default function ViewTracker({ contentId }: { contentId: string }) {
   useEffect(() => {
     const key = `viewed_${contentId}`
-    if (sessionStorage.getItem(key)) return // 이미 이 세션에서 조회함
-
+    if (sessionStorage.getItem(key)) return
     sessionStorage.setItem(key, '1')
-    const supabase = createClient()
-    supabase
-      .from('contents')
-      .update({ view_count: currentViews + 1 })
-      .eq('id', contentId)
-      .then(() => {})
-  }, [contentId, currentViews])
+    fetch('/api/content/view', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: contentId }),
+    })
+  }, [contentId])
 
   return null
 }

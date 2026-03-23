@@ -53,7 +53,7 @@ export default function ArchivePage() {
 
     let q = supabase
       .from('contents')
-      .select('id, title, excerpt, category, view_count, like_count, created_at, author_id, cover_image_url', { count: 'exact' })
+      .select('id, title, excerpt, category, view_count, like_count, created_at, author_id, cover_image_url, profiles!author_id(name, grade)', { count: 'exact' })
       .eq('status', 'published')
       .order(sort, { ascending: false })
       .range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1)
@@ -64,58 +64,13 @@ export default function ArchivePage() {
       q = q.or(`title.ilike.%${query.trim()}%,excerpt.ilike.%${query.trim()}%`)
     }
 
-    const { data, count, error } = await q
-
-    if (error && error.message?.includes('view_count')) {
-      const { data: data2, count: count2 } = await supabase
-        .from('contents')
-        .select('id, title, excerpt, category, created_at, author_id', { count: 'exact' })
-        .eq('status', 'published')
-        .order('created_at', { ascending: false })
-        .range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1)
-
-      if (data2 && data2.length > 0) {
-        const ids2 = data2.map((c: {author_id: string}) => c.author_id).filter(Boolean) as string[]
-        const uids2 = ids2.filter((id, i, arr) => arr.indexOf(id) === i)
-        const pmap2: Record<string, { name: string; grade: number | null }> = {}
-        if (uids2.length > 0) {
-          const { data: pd2 } = await supabase.from('profiles').select('id, name, grade').in('id', uids2)
-          ;(pd2 ?? []).forEach((p: {id: string; name: string; grade: number | null}) => { pmap2[p.id] = { name: p.name, grade: p.grade ?? null } })
-        }
-        const merged2 = data2.map((c: {id: string; title: string; excerpt: string | null; category: string | null; created_at: string; author_id: string}) => ({
-          ...c, summary: c.excerpt, view_count: 0, like_count: 0, profiles: pmap2[c.author_id] ?? null,
-        }))
-        setContents(merged2 as unknown as Content[])
-        setTotal(count2 ?? 0)
-        setLoading(false)
-        return
-      }
-      setContents([])
-      setTotal(0)
-      setLoading(false)
-      return
-    }
+    const { data, count } = await q
 
     if (data && data.length > 0) {
-      const authorIds = data.map((c) => c.author_id).filter(Boolean) as string[]
-      const uniqueIds = authorIds.filter((id, i, arr) => arr.indexOf(id) === i)
-      const profileMap: Record<string, { name: string; grade: number | null }> = {}
-
-      if (uniqueIds.length > 0) {
-        const { data: profilesData } = await supabase
-          .from('profiles')
-          .select('id, name, grade')
-          .in('id', uniqueIds)
-        ;(profilesData ?? []).forEach((p) => {
-          profileMap[p.id] = { name: p.name, grade: p.grade ?? null }
-        })
-      }
-
       const merged = data.map((c) => ({
         ...c,
         summary: c.excerpt,
         cover_image_url: c.cover_image_url ?? null,
-        profiles: profileMap[c.author_id] ?? null,
       }))
       setContents(merged as unknown as Content[])
     } else {

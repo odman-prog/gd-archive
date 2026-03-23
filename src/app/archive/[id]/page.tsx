@@ -15,64 +15,42 @@ export default async function ContentDetailPage({ params }: { params: { id: stri
 
   const { data: content } = await supabase
     .from('contents')
-    .select('id, title, excerpt, body, category, featured, view_count, like_count, created_at, author_id, file_url, file_name, cover_image_url, tags')
+    .select('id, title, excerpt, body, category, featured, view_count, like_count, created_at, author_id, file_url, file_name, cover_image_url, tags, profiles!author_id(name, grade)')
     .eq('id', params.id)
     .eq('status', 'published')
     .single()
 
   if (!content) notFound()
 
-  let authorLabel = '알 수 없음'
-  let authorGrade: string | null = null
-  if (content.author_id) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('name, grade')
-      .eq('id', content.author_id)
-      .single()
-    if (profile) {
-      authorLabel = profile.name
-      authorGrade = profile.grade ? `${profile.grade}학년` : null
-    }
-  }
+  // author profile은 JOIN으로 이미 가져옴
+  const authorProfile = (Array.isArray(content.profiles) ? content.profiles[0] : content.profiles) as { name: string; grade: number | null } | null
+  const authorLabel = authorProfile?.name ?? '알 수 없음'
+  const authorGrade = authorProfile?.grade ? `${authorProfile.grade}학년` : null
 
-  let isLiked = false
-  if (user) {
-    const { data: like } = await supabase
-      .from('likes')
-      .select('id')
-      .eq('content_id', params.id)
-      .eq('user_id', user.id)
-      .maybeSingle()
-    isLiked = !!like
-  }
+  // 좋아요 여부 + 관련 글 병렬 조회
+  const [likeResult, relatedResult] = await Promise.all([
+    user
+      ? supabase.from('likes').select('id').eq('content_id', params.id).eq('user_id', user.id).maybeSingle()
+      : Promise.resolve({ data: null }),
+    content.category
+      ? supabase
+          .from('contents')
+          .select('id, title, category, cover_image_url, created_at, author_id, profiles!author_id(name)')
+          .eq('status', 'published')
+          .eq('category', content.category)
+          .neq('id', content.id)
+          .order('created_at', { ascending: false })
+          .limit(2)
+      : Promise.resolve({ data: [] }),
+  ])
 
-  // 관련 글 (같은 카테고리, 최신순 2개)
-  let relatedItems: {
-    id: string; title: string; category: string | null;
-    cover_image_url: string | null; created_at: string; author_id: string; authorName: string
-  }[] = []
-  if (content.category) {
-    const { data: relatedRaw } = await supabase
-      .from('contents')
-      .select('id, title, category, cover_image_url, created_at, author_id')
-      .eq('status', 'published')
-      .eq('category', content.category)
-      .neq('id', content.id)
-      .order('created_at', { ascending: false })
-      .limit(2)
+  const isLiked = !!(likeResult as { data: unknown }).data
 
-    if (relatedRaw && relatedRaw.length > 0) {
-      const authorIds = relatedRaw.map((r) => r.author_id).filter(Boolean) as string[]
-      const uniqueIds = authorIds.filter((id, i, arr) => arr.indexOf(id) === i)
-      const profileMap: Record<string, string> = {}
-      if (uniqueIds.length > 0) {
-        const { data: pd } = await supabase.from('profiles').select('id, name').in('id', uniqueIds)
-        ;(pd ?? []).forEach((p) => { profileMap[p.id] = p.name })
-      }
-      relatedItems = relatedRaw.map((r) => ({ ...r, authorName: profileMap[r.author_id] ?? '알 수 없음' }))
-    }
-  }
+  const relatedRaw = (relatedResult as { data: unknown[] | null }).data ?? []
+  const relatedItems = relatedRaw.map((r) => {
+    const item = r as { id: string; title: string; category: string | null; cover_image_url: string | null; created_at: string; author_id: string; profiles: { name: string } | null }
+    return { ...item, authorName: item.profiles?.name ?? '알 수 없음' }
+  })
 
   const tags: string[] = Array.isArray(content.tags) ? content.tags : []
   const categoryColor = CATEGORY_COLORS[content.category ?? ''] ?? CATEGORY_COLORS['기타']
@@ -88,7 +66,7 @@ export default async function ContentDetailPage({ params }: { params: { id: stri
 
   return (
     <div className="max-w-7xl mx-auto px-6 lg:px-12 py-12">
-      <ViewTracker contentId={content.id} currentViews={content.view_count} />
+      <ViewTracker contentId={content.id} />
 
       {/* 뒤로 가기 */}
       <Link
