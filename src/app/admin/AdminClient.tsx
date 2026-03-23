@@ -78,6 +78,8 @@ export default function AdminClient({
   const [stats, setStats] = useState(initialStats)
   const [loadingId, setLoadingId] = useState<string | null>(null)
   const [search, setSearch] = useState('')
+  const [gradeTab, setGradeTab] = useState<'1' | '2' | '3' | 'teacher'>('1')
+  const [classTab, setClassTab] = useState<number | 'all'>('all')
 
   const [showTeacherForm, setShowTeacherForm] = useState(false)
   const [teacherForm, setTeacherForm] = useState({ name: '', loginId: '', password: '' })
@@ -153,6 +155,21 @@ export default function AdminClient({
     const { error } = await supabase.from('magazines').delete().eq('id', mag.id)
     if (error) { alert('삭제 실패: ' + error.message); return }
     setMagazines((m) => m.filter((x) => x.id !== mag.id))
+  }
+
+  const [bulkLoading, setBulkLoading] = useState(false)
+
+  async function handleBulkApprove() {
+    if (!confirm(`대기 중인 ${pending.length}명을 모두 승인하시겠습니까?`)) return
+    setBulkLoading(true)
+    const ids = pending.map((p) => p.id)
+    const { error } = await supabase.from('profiles').update({ status: 'approved' }).in('id', ids)
+    setBulkLoading(false)
+    if (error) { alert('일괄 승인 실패: ' + error.message); return }
+    const approved = pending.map((p) => ({ ...p, status: 'approved' }))
+    setUsers((u) => [...approved, ...u])
+    setStats((s) => ({ ...s, total: s.total + approved.length, active: s.active + approved.length }))
+    setPending([])
   }
 
   async function handleApproval(id: string, approved: boolean) {
@@ -256,17 +273,49 @@ export default function AdminClient({
     }
   }
 
+  // 현재 학년의 반 목록
+  const availableClasses = useMemo(() => {
+    if (gradeTab === 'teacher') return []
+    const classes = users
+      .filter((u) => u.role !== 'teacher' && String(u.grade) === gradeTab && u.class != null)
+      .map((u) => u.class)
+    return [...new Set(classes)].sort((a, b) => a - b)
+  }, [users, gradeTab])
+
   const filteredUsers = useMemo(() => {
     const q = search.trim().toLowerCase()
-    if (!q) return users
-    return users.filter(
-      (u) =>
-        u.name.toLowerCase().includes(q) ||
-        u.student_id.includes(q) ||
-        String(u.grade).includes(q) ||
-        String(u.class).includes(q)
-    )
-  }, [users, search])
+    let list = users
+
+    // 학년 탭 필터
+    if (gradeTab === 'teacher') {
+      list = list.filter((u) => u.role === 'teacher')
+    } else {
+      list = list.filter((u) => u.role !== 'teacher' && String(u.grade) === gradeTab)
+      // 반 탭 필터
+      if (classTab !== 'all') {
+        list = list.filter((u) => u.class === classTab)
+      }
+    }
+
+    // 검색
+    if (q) {
+      list = list.filter(
+        (u) =>
+          u.name.toLowerCase().includes(q) ||
+          u.student_id.includes(q) ||
+          String(u.grade).includes(q) ||
+          String(u.class).includes(q)
+      )
+    }
+
+    // 반 → 번호 순 정렬
+    list = [...list].sort((a, b) => {
+      if ((a.class ?? 0) !== (b.class ?? 0)) return (a.class ?? 0) - (b.class ?? 0)
+      return (a.number ?? 0) - (b.number ?? 0)
+    })
+
+    return list
+  }, [users, search, gradeTab, classTab])
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
@@ -539,12 +588,22 @@ export default function AdminClient({
           {/* ── 가입 승인 대기 ──────────────────────────── */}
           {pending.length > 0 && (
             <section>
-              <h2 className="font-serif text-xl font-semibold text-primary mb-4 flex items-center gap-2">
-                가입 승인 대기
-                <span className="px-2.5 py-0.5 rounded-full bg-[#ffdea5] text-secondary text-xs font-bold font-sans">
-                  {pending.length}
-                </span>
-              </h2>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="font-serif text-xl font-semibold text-primary flex items-center gap-2">
+                  가입 승인 대기
+                  <span className="px-2.5 py-0.5 rounded-full bg-[#ffdea5] text-secondary text-xs font-bold font-sans">
+                    {pending.length}
+                  </span>
+                </h2>
+                <button
+                  onClick={handleBulkApprove}
+                  disabled={bulkLoading}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary text-cream text-xs font-bold font-sans hover:bg-primary/90 transition-colors disabled:opacity-50"
+                >
+                  {bulkLoading ? <Loader2 size={13} className="animate-spin" /> : <span className="material-symbols-outlined text-[14px]">done_all</span>}
+                  전체 승인
+                </button>
+              </div>
               <div className="bg-white rounded-2xl border border-primary/10 overflow-hidden shadow-sm">
                 <div className="divide-y divide-primary/5">
                   {pending.map((p) => {
@@ -618,6 +677,53 @@ export default function AdminClient({
                 />
               </div>
             </div>
+
+            {/* 학년 탭 */}
+            <div className="flex gap-1 mb-3 bg-surface rounded-xl p-1 w-fit">
+              {(['1', '2', '3', 'teacher'] as const).map((g) => (
+                <button
+                  key={g}
+                  onClick={() => { setGradeTab(g); setClassTab('all') }}
+                  className={`px-4 py-1.5 rounded-lg text-xs font-bold font-sans transition-all ${
+                    gradeTab === g
+                      ? 'bg-white text-primary shadow-sm'
+                      : 'text-primary/40 hover:text-primary/70'
+                  }`}
+                >
+                  {g === 'teacher' ? '교사' : `${g}학년`}
+                </button>
+              ))}
+            </div>
+
+            {/* 반 탭 */}
+            {gradeTab !== 'teacher' && availableClasses.length > 0 && (
+              <div className="flex gap-1 mb-4 flex-wrap">
+                <button
+                  onClick={() => setClassTab('all')}
+                  className={`px-3 py-1 rounded-lg text-xs font-sans font-semibold transition-all ${
+                    classTab === 'all'
+                      ? 'bg-primary text-cream'
+                      : 'bg-surface text-primary/50 hover:text-primary'
+                  }`}
+                >
+                  전체
+                </button>
+                {availableClasses.map((c) => (
+                  <button
+                    key={c}
+                    onClick={() => setClassTab(c)}
+                    className={`px-3 py-1 rounded-lg text-xs font-sans font-semibold transition-all ${
+                      classTab === c
+                        ? 'bg-primary text-cream'
+                        : 'bg-surface text-primary/50 hover:text-primary'
+                    }`}
+                  >
+                    {c}반
+                  </button>
+                ))}
+              </div>
+            )}
+
 
             <div className="bg-white rounded-2xl overflow-hidden shadow-sm" style={{ boxShadow: '0 4px 20px -4px rgba(1,45,29,0.08)' }}>
               <table className="w-full text-left border-collapse">
