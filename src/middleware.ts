@@ -29,7 +29,15 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
+  // 인증이 필요한 경로에만 미들웨어 실행 (공개 페이지 제외)
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|icons|manifest.json|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/admin/:path*',
+    '/mypage/:path*',
+    '/dashboard/:path*',
+    '/write/:path*',
+    '/api/admin/:path*',
+    '/api/content/:path*',
+    '/api/dashboard/:path*',
+    '/api/user/:path*',
   ],
 }
