@@ -49,9 +49,10 @@ const ROLE_LABELS: Record<string, { label: string; bg: string; text: string }> =
 }
 
 const STATUS_LABELS: Record<string, { label: string; bg: string; dot: string }> = {
-  pending:  { label: '대기',  bg: 'bg-[#ffdea5]/50', dot: 'bg-secondary' },
-  approved: { label: '활성',  bg: 'bg-primary-fixed', dot: 'bg-primary' },
-  rejected: { label: '거부',  bg: 'bg-error-container/40', dot: 'bg-error' },
+  pending:  { label: '대기',   bg: 'bg-[#ffdea5]/50',       dot: 'bg-secondary' },
+  approved: { label: '활성',   bg: 'bg-primary-fixed',      dot: 'bg-primary' },
+  rejected: { label: '거부',   bg: 'bg-error-container/40', dot: 'bg-error' },
+  inactive: { label: '비활성', bg: 'bg-surface-container',  dot: 'bg-primary/25' },
 }
 
 const supabase = createClient()
@@ -191,6 +192,13 @@ export default function AdminClient({
     const { error } = await supabase.from('profiles').update({ role }).eq('id', id)
     if (error) { alert('역할 변경 실패'); return }
     setUsers((u) => u.map((user) => user.id === id ? { ...user, role } : user))
+  }
+
+  async function handleStatusToggle(u: Profile) {
+    const newStatus = u.status === 'inactive' ? 'approved' : 'inactive'
+    const { error } = await supabase.from('profiles').update({ status: newStatus }).eq('id', u.id)
+    if (error) { alert('상태 변경 실패: ' + error.message); return }
+    setUsers((prev) => prev.map((x) => x.id === u.id ? { ...x, status: newStatus } : x))
   }
 
   const [editingClassId, setEditingClassId] = useState<string | null>(null)
@@ -783,10 +791,14 @@ export default function AdminClient({
                                   </div>
                                 </td>
                                 <td className="px-6 py-3 hidden sm:table-cell">
-                                  <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold font-sans ${statusMeta.bg}`}>
+                                  <button
+                                    onClick={() => handleStatusToggle(u)}
+                                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold font-sans transition-colors hover:opacity-80 ${statusMeta.bg}`}
+                                    title={u.status === 'inactive' ? '클릭하여 활성화' : '클릭하여 비활성화'}
+                                  >
                                     <span className={`w-1.5 h-1.5 rounded-full ${statusMeta.dot}`} />
                                     {statusMeta.label}
-                                  </span>
+                                  </button>
                                 </td>
                                 <td className="px-6 py-3 text-right">
                                   <div className="flex justify-end opacity-0 group-hover:opacity-100 transition-opacity">

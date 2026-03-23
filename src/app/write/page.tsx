@@ -60,6 +60,36 @@ export default async function WritePage() {
     .eq('id', user.id)
     .single()
 
+  // ── 비활성 안내 화면 ─────────────────────────────
+  if (profile?.status === 'inactive') {
+    return (
+      <div className="bg-surface min-h-screen">
+        <div className="relative h-[52vh] min-h-[340px] overflow-hidden">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/a.png" alt="" className="w-full h-full object-cover object-center" />
+          <div className="absolute inset-0 bg-gradient-to-b from-primary/50 via-primary/55 to-primary/90" />
+          <div className="absolute inset-0 flex flex-col justify-end max-w-screen-xl mx-auto px-6 md:px-16 pb-16 md:pb-20">
+            <h1 className="font-serif text-6xl md:text-[8rem] text-cream italic leading-[0.85] tracking-tighter">기록</h1>
+          </div>
+        </div>
+        <div className="relative -mt-10 max-w-md mx-auto px-5 pb-24">
+          <div className="bg-white rounded-3xl shadow-2xl shadow-primary/15 px-8 md:px-10 py-10 md:py-12 text-center">
+            <div className="w-14 h-14 rounded-full bg-primary/6 border border-primary/10 flex items-center justify-center mx-auto mb-5">
+              <span className="material-symbols-outlined text-primary/40 text-[26px]">block</span>
+            </div>
+            <h2 className="font-serif text-2xl text-primary mb-2">비활성 계정</h2>
+            <p className="font-sans text-sm text-primary/45 leading-relaxed mb-6">
+              {profile?.name ? `${profile.name}님의 ` : ''}계정이 비활성화되어<br />글 작성이 제한됩니다.<br />담당 선생님에게 문의해주세요.
+            </p>
+            <Link href="/archive" className="inline-block px-6 py-2.5 rounded-full border border-primary/15 text-sm text-primary/60 font-sans hover:bg-surface transition-colors">
+              아카이브 보기
+            </Link>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   // ── 승인 대기 안내 화면 ──────────────────────────
   if (!profile || profile.status !== 'approved') {
     return (
