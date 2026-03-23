@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { format } from 'date-fns'
 import { ko } from 'date-fns/locale'
 
-export const revalidate = 60 // 60초 ISR 캐싱
+export const dynamic = 'force-dynamic'
 
 type Post = {
   id: string
@@ -19,7 +19,7 @@ export default async function TeacherPage() {
 
   const { data: posts } = await supabase
     .from('contents')
-    .select('id, title, excerpt, cover_image_url, created_at, profiles(name)')
+    .select('id, title, excerpt, cover_image_url, created_at, profiles!author_id(name)')
     .eq('category', '교사의 서재')
     .eq('status', 'published')
     .order('created_at', { ascending: false })
