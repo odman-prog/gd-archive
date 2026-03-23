@@ -7,17 +7,17 @@ type Post = {
   id: string
   title: string
   excerpt: string | null
-  cover_image: string | null
+  cover_image_url: string | null
   created_at: string
-  profiles: { full_name: string | null } | null
+  profiles: { name: string | null } | null
 }
 
 export default async function TeacherPage() {
-  const supabase = await createClient()
+  const supabase = createClient()
 
   const { data: posts } = await supabase
     .from('contents')
-    .select('id, title, excerpt, cover_image, created_at, profiles(full_name)')
+    .select('id, title, excerpt, cover_image_url, created_at, profiles(name)')
     .eq('category', '교사의 서재')
     .eq('status', 'published')
     .order('created_at', { ascending: false })
@@ -112,10 +112,10 @@ export default async function TeacherPage() {
                   <div className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-500 h-full">
                     <div className="flex flex-col md:flex-row h-full">
                       <div className="md:w-1/2 aspect-[4/3] md:aspect-auto overflow-hidden">
-                        {mainPost.cover_image ? (
+                        {mainPost.cover_image_url ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img
-                            src={mainPost.cover_image}
+                            src={mainPost.cover_image_url}
                             alt={mainPost.title}
                             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                           />
@@ -143,10 +143,10 @@ export default async function TeacherPage() {
                         </div>
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-[10px] text-cream font-bold font-sans">
-                            {mainPost.profiles?.full_name?.slice(0, 2) ?? '선생'}
+                            {mainPost.profiles?.name?.slice(0, 2) ?? '선생'}
                           </div>
                           <span className="font-sans text-xs text-primary font-bold">
-                            {mainPost.profiles?.full_name ?? '선생님'} 추천
+                            {mainPost.profiles?.name ?? '선생님'} 추천
                           </span>
                           <span className="font-sans text-xs text-on-surface-variant ml-auto">
                             {format(new Date(mainPost.created_at), 'yyyy.MM.dd', { locale: ko })}
@@ -163,10 +163,10 @@ export default async function TeacherPage() {
                 <Link href={`/archive/${secondaryPost.id}`} className="md:col-span-4 group cursor-pointer">
                   <div className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-500 h-full flex flex-col">
                     <div className="aspect-[4/3] relative overflow-hidden">
-                      {secondaryPost.cover_image ? (
+                      {secondaryPost.cover_image_url ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
-                          src={secondaryPost.cover_image}
+                          src={secondaryPost.cover_image_url}
                           alt={secondaryPost.title}
                           className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                         />
@@ -192,7 +192,7 @@ export default async function TeacherPage() {
                       </div>
                       <div className="mt-6 flex items-center justify-between">
                         <span className="font-sans text-[10px] text-on-surface-variant font-medium uppercase tracking-widest">
-                          {secondaryPost.profiles?.full_name ?? '선생님'}
+                          {secondaryPost.profiles?.name ?? '선생님'}
                         </span>
                         <span
                           className="material-symbols-outlined text-secondary opacity-0 group-hover:opacity-100 transition-opacity"

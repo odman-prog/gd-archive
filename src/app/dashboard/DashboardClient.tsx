@@ -65,8 +65,12 @@ export default function DashboardClient({
       body: JSON.stringify(body),
     })
     if (!res.ok) {
-      const d = await res.json()
-      throw new Error(d.error ?? '오류 발생')
+      try {
+        const d = await res.json()
+        throw new Error(d.error ?? '오류 발생')
+      } catch {
+        throw new Error(`서버 오류 (${res.status})`)
+      }
     }
   }
 
