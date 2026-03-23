@@ -78,8 +78,8 @@ export default function AdminClient({
   const [stats, setStats] = useState(initialStats)
   const [loadingId, setLoadingId] = useState<string | null>(null)
   const [search, setSearch] = useState('')
-  const [gradeTab, setGradeTab] = useState<'1' | '2' | '3' | 'teacher'>('1')
-  const [classTab, setClassTab] = useState<number | 'all'>('all')
+  const [classTabs, setClassTabs] = useState<Record<string, number | 'all'>>({ '1': 'all', '2': 'all', '3': 'all' })
+  const [bulkDeleteLoading, setBulkDeleteLoading] = useState<string | null>(null)
 
   const [showTeacherForm, setShowTeacherForm] = useState(false)
   const [teacherForm, setTeacherForm] = useState({ name: '', loginId: '', password: '' })
@@ -273,49 +273,43 @@ export default function AdminClient({
     }
   }
 
-  // 현재 학년의 반 목록
-  const availableClasses = useMemo(() => {
-    if (gradeTab === 'teacher') return []
-    const classes = users
-      .filter((u) => u.role !== 'teacher' && String(u.grade) === gradeTab && u.class != null)
+  function getGradeClasses(grade: number) {
+    const cls = users
+      .filter((u) => u.role !== 'teacher' && u.grade === grade && u.class != null)
       .map((u) => u.class)
-    return [...new Set(classes)].sort((a, b) => a - b)
-  }, [users, gradeTab])
+    return [...new Set(cls)].sort((a, b) => a - b)
+  }
 
-  const filteredUsers = useMemo(() => {
+  function getGradeUsers(grade: number) {
     const q = search.trim().toLowerCase()
-    let list = users
+    const ct = classTabs[String(grade)]
+    let list = users.filter((u) => u.role !== 'teacher' && u.grade === grade)
+    if (ct !== 'all') list = list.filter((u) => u.class === ct)
+    if (q) list = list.filter((u) => u.name.toLowerCase().includes(q) || u.student_id.includes(q))
+    return [...list].sort((a, b) => (a.class ?? 0) - (b.class ?? 0) || (a.number ?? 0) - (b.number ?? 0))
+  }
 
-    // 학년 탭 필터
-    if (gradeTab === 'teacher') {
-      list = list.filter((u) => u.role === 'teacher')
-    } else {
-      list = list.filter((u) => u.role !== 'teacher' && String(u.grade) === gradeTab)
-      // 반 탭 필터
-      if (classTab !== 'all') {
-        list = list.filter((u) => u.class === classTab)
-      }
-    }
+  const teacherUsers = useMemo(() => users.filter((u) => u.role === 'teacher'), [users])
 
-    // 검색
-    if (q) {
-      list = list.filter(
-        (u) =>
-          u.name.toLowerCase().includes(q) ||
-          u.student_id.includes(q) ||
-          String(u.grade).includes(q) ||
-          String(u.class).includes(q)
-      )
-    }
-
-    // 반 → 번호 순 정렬
-    list = [...list].sort((a, b) => {
-      if ((a.class ?? 0) !== (b.class ?? 0)) return (a.class ?? 0) - (b.class ?? 0)
-      return (a.number ?? 0) - (b.number ?? 0)
-    })
-
-    return list
-  }, [users, search, gradeTab, classTab])
+  async function handleBulkDelete(grade: number) {
+    const ct = classTabs[String(grade)]
+    const targets = getGradeUsers(grade)
+    if (!targets.length) return
+    const label = ct === 'all' ? `${grade}학년 전체` : `${grade}학년 ${ct}반`
+    if (!confirm(`${label} ${targets.length}명을 모두 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`)) return
+    setBulkDeleteLoading(String(grade))
+    await Promise.all(targets.map((u) =>
+      fetch('/api/admin/delete-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: u.id }),
+      })
+    ))
+    const ids = new Set(targets.map((u) => u.id))
+    setUsers((prev) => prev.filter((u) => !ids.has(u.id)))
+    setStats((s) => ({ ...s, total: s.total - targets.length, active: s.active - targets.length }))
+    setBulkDeleteLoading(null)
+  }
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
@@ -659,18 +653,16 @@ export default function AdminClient({
             </section>
           )}
 
-          {/* ── 전체 사용자 테이블 ───────────────────────── */}
-          <section>
-            <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
-              <h2 className="font-serif text-xl font-semibold text-primary">
-                전체 사용자
-                <span className="ml-2 text-sm font-sans font-normal text-primary/40">({filteredUsers.length}명)</span>
-              </h2>
+          {/* ── 전체 사용자 ───────────────────────── */}
+          <section className="flex flex-col gap-8">
+            {/* 검색 */}
+            <div className="flex items-center justify-between flex-wrap gap-3">
+              <h2 className="font-serif text-xl font-semibold text-primary">전체 사용자</h2>
               <div className="relative">
                 <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-primary/30 text-[18px]">search</span>
                 <input
                   type="text"
-                  placeholder="이름, 학번으로 검색"
+                  placeholder="이름, 아이디로 검색"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   className="pl-10 pr-4 py-2.5 rounded-lg border border-primary/15 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/15 w-56 font-sans"
@@ -678,182 +670,202 @@ export default function AdminClient({
               </div>
             </div>
 
-            {/* 학년 탭 */}
-            <div className="flex gap-1 mb-3 bg-surface rounded-xl p-1 w-fit">
-              {(['1', '2', '3', 'teacher'] as const).map((g) => (
-                <button
-                  key={g}
-                  onClick={() => { setGradeTab(g); setClassTab('all') }}
-                  className={`px-4 py-1.5 rounded-lg text-xs font-bold font-sans transition-all ${
-                    gradeTab === g
-                      ? 'bg-white text-primary shadow-sm'
-                      : 'text-primary/40 hover:text-primary/70'
-                  }`}
-                >
-                  {g === 'teacher' ? '교사' : `${g}학년`}
-                </button>
-              ))}
-            </div>
+            {/* 학년별 표 */}
+            {[1, 2, 3].map((grade) => {
+              const gradeKey = String(grade)
+              const classes = getGradeClasses(grade)
+              const gradeUsers = getGradeUsers(grade)
+              const ct = classTabs[gradeKey]
+              return (
+                <div key={grade}>
+                  {/* 헤더 */}
+                  <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+                    <h3 className="font-serif text-lg font-semibold text-primary flex items-center gap-2">
+                      {grade}학년
+                      <span className="text-sm font-sans font-normal text-primary/40">({gradeUsers.length}명)</span>
+                    </h3>
+                    <button
+                      onClick={() => handleBulkDelete(grade)}
+                      disabled={bulkDeleteLoading === gradeKey || gradeUsers.length === 0}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-rose-200 text-rose-500 text-xs font-bold font-sans hover:bg-rose-50 transition-colors disabled:opacity-40"
+                    >
+                      {bulkDeleteLoading === gradeKey ? <Loader2 size={12} className="animate-spin" /> : <span className="material-symbols-outlined text-[14px]">delete_sweep</span>}
+                      {ct === 'all' ? `${grade}학년 전체 삭제` : `${grade}학년 ${ct}반 전체 삭제`}
+                    </button>
+                  </div>
 
-            {/* 반 탭 */}
-            {gradeTab !== 'teacher' && availableClasses.length > 0 && (
-              <div className="flex gap-1 mb-4 flex-wrap">
-                <button
-                  onClick={() => setClassTab('all')}
-                  className={`px-3 py-1 rounded-lg text-xs font-sans font-semibold transition-all ${
-                    classTab === 'all'
-                      ? 'bg-primary text-cream'
-                      : 'bg-surface text-primary/50 hover:text-primary'
-                  }`}
-                >
-                  전체
-                </button>
-                {availableClasses.map((c) => (
-                  <button
-                    key={c}
-                    onClick={() => setClassTab(c)}
-                    className={`px-3 py-1 rounded-lg text-xs font-sans font-semibold transition-all ${
-                      classTab === c
-                        ? 'bg-primary text-cream'
-                        : 'bg-surface text-primary/50 hover:text-primary'
-                    }`}
-                  >
-                    {c}반
-                  </button>
-                ))}
+                  {/* 반 탭 */}
+                  {classes.length > 0 && (
+                    <div className="flex gap-1 mb-3 flex-wrap">
+                      <button
+                        onClick={() => setClassTabs((prev) => ({ ...prev, [gradeKey]: 'all' }))}
+                        className={`px-3 py-1 rounded-lg text-xs font-sans font-semibold transition-all ${ct === 'all' ? 'bg-primary text-cream' : 'bg-surface text-primary/50 hover:text-primary'}`}
+                      >전체</button>
+                      {classes.map((c) => (
+                        <button
+                          key={c}
+                          onClick={() => setClassTabs((prev) => ({ ...prev, [gradeKey]: c }))}
+                          className={`px-3 py-1 rounded-lg text-xs font-sans font-semibold transition-all ${ct === c ? 'bg-primary text-cream' : 'bg-surface text-primary/50 hover:text-primary'}`}
+                        >{c}반</button>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* 표 */}
+                  <div className="bg-white rounded-2xl overflow-hidden shadow-sm" style={{ boxShadow: '0 4px 20px -4px rgba(1,45,29,0.08)' }}>
+                    <table className="w-full text-left border-collapse">
+                      <thead className="bg-surface border-b border-primary/5">
+                        <tr>
+                          <th className="px-6 py-3 text-[10px] font-extrabold uppercase tracking-widest text-primary/60 font-sans">회원 정보</th>
+                          <th className="px-6 py-3 text-[10px] font-extrabold uppercase tracking-widest text-primary/60 font-sans hidden md:table-cell">반 · 번호</th>
+                          <th className="px-6 py-3 text-[10px] font-extrabold uppercase tracking-widest text-primary/60 font-sans">역할</th>
+                          <th className="px-6 py-3 text-[10px] font-extrabold uppercase tracking-widest text-primary/60 font-sans hidden sm:table-cell">상태</th>
+                          <th className="px-6 py-3 text-right"></th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-primary/5">
+                        {gradeUsers.length === 0 ? (
+                          <tr><td colSpan={5} className="py-10 text-center text-sm text-primary/30 font-sans">해당 학생이 없습니다.</td></tr>
+                        ) : (
+                          gradeUsers.map((u) => {
+                            const roleMeta = ROLE_LABELS[u.role] ?? ROLE_LABELS['student']
+                            const statusMeta = STATUS_LABELS[u.status] ?? STATUS_LABELS['pending']
+                            return (
+                              <tr key={u.id} className="hover:bg-surface/40 transition-colors group">
+                                <td className="px-6 py-3">
+                                  <div className="flex items-center gap-3">
+                                    <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold font-serif text-sm shrink-0 ${u.role === 'chief_editor' ? 'bg-primary-fixed' : u.role === 'editor' ? 'bg-[#ffdea5]' : 'bg-surface-container'} text-primary`}>
+                                      {u.name.slice(0, 2)}
+                                    </div>
+                                    <div>
+                                      <p className="font-sans font-semibold text-primary text-sm">{u.name}</p>
+                                      <p className="text-xs text-primary/40 font-sans">{u.student_id}</p>
+                                    </div>
+                                  </div>
+                                </td>
+                                <td className="px-6 py-3 hidden md:table-cell">
+                                  {editingClassId === u.id ? (
+                                    <div className="flex items-center gap-1">
+                                      <select value={classForm.grade} onChange={(e) => setClassForm({ ...classForm, grade: e.target.value })}
+                                        className="px-1.5 py-1 rounded border border-primary/20 text-xs font-sans focus:outline-none w-16">
+                                        {[1,2,3].map((g) => <option key={g} value={g}>{g}학년</option>)}
+                                      </select>
+                                      <select value={classForm.classNum} onChange={(e) => setClassForm({ ...classForm, classNum: e.target.value })}
+                                        className="px-1.5 py-1 rounded border border-primary/20 text-xs font-sans focus:outline-none w-14">
+                                        {Array.from({length:10},(_,i)=>i+1).map((c) => <option key={c} value={c}>{c}반</option>)}
+                                      </select>
+                                      <input type="number" min={1} max={50} value={classForm.number}
+                                        onChange={(e) => setClassForm({ ...classForm, number: e.target.value })}
+                                        className="px-1.5 py-1 rounded border border-primary/20 text-xs font-sans focus:outline-none w-14" placeholder="번호" />
+                                      <button onClick={() => saveClassInfo(u.id)} className="text-emerald-600 hover:text-emerald-700">
+                                        <span className="material-symbols-outlined text-[16px]">check</span>
+                                      </button>
+                                      <button onClick={() => setEditingClassId(null)} className="text-primary/30 hover:text-primary/60">
+                                        <span className="material-symbols-outlined text-[16px]">close</span>
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <div className="flex items-center gap-2 group/cell">
+                                      <span className="text-sm text-primary/60 font-sans">{u.class}반 {u.number}번</span>
+                                      <button onClick={() => startEditClass(u)} className="opacity-0 group-hover/cell:opacity-100 transition-opacity text-primary/30 hover:text-secondary">
+                                        <span className="material-symbols-outlined text-[14px]">edit</span>
+                                      </button>
+                                    </div>
+                                  )}
+                                </td>
+                                <td className="px-6 py-3">
+                                  <div className="relative inline-block">
+                                    <select value={u.role} onChange={(e) => handleRoleChange(u.id, e.target.value)}
+                                      className={`appearance-none pl-2.5 pr-6 py-1 rounded-lg text-[10px] font-extrabold tracking-wide uppercase cursor-pointer focus:outline-none font-sans ${roleMeta.bg} ${roleMeta.text}`}>
+                                      {ROLE_OPTIONS.map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+                                    </select>
+                                    <span className="material-symbols-outlined absolute right-1 top-1/2 -translate-y-1/2 pointer-events-none text-[12px] opacity-50">expand_more</span>
+                                  </div>
+                                </td>
+                                <td className="px-6 py-3 hidden sm:table-cell">
+                                  <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold font-sans ${statusMeta.bg}`}>
+                                    <span className={`w-1.5 h-1.5 rounded-full ${statusMeta.dot}`} />
+                                    {statusMeta.label}
+                                  </span>
+                                </td>
+                                <td className="px-6 py-3 text-right">
+                                  <div className="flex justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button onClick={() => handleDeleteUser(u)} disabled={loadingId === u.id}
+                                      className="p-2 rounded-lg text-primary/30 hover:text-error hover:bg-error-container/20 transition-colors disabled:opacity-50">
+                                      {loadingId === u.id ? <Loader2 size={14} className="animate-spin" /> : <span className="material-symbols-outlined text-[17px]">delete</span>}
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            )
+                          })
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )
+            })}
+
+            {/* 교사 표 */}
+            {teacherUsers.length > 0 && (
+              <div>
+                <h3 className="font-serif text-lg font-semibold text-primary mb-3">교사</h3>
+                <div className="bg-white rounded-2xl overflow-hidden shadow-sm" style={{ boxShadow: '0 4px 20px -4px rgba(1,45,29,0.08)' }}>
+                  <table className="w-full text-left border-collapse">
+                    <thead className="bg-surface border-b border-primary/5">
+                      <tr>
+                        <th className="px-6 py-3 text-[10px] font-extrabold uppercase tracking-widest text-primary/60 font-sans">회원 정보</th>
+                        <th className="px-6 py-3 text-[10px] font-extrabold uppercase tracking-widest text-primary/60 font-sans hidden sm:table-cell">상태</th>
+                        <th className="px-6 py-3 text-[10px] font-extrabold uppercase tracking-widest text-primary/60 font-sans hidden lg:table-cell">가입일</th>
+                        <th className="px-6 py-3 text-right"></th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-primary/5">
+                      {teacherUsers.map((u) => {
+                        const statusMeta = STATUS_LABELS[u.status] ?? STATUS_LABELS['approved']
+                        return (
+                          <tr key={u.id} className="hover:bg-surface/40 transition-colors group">
+                            <td className="px-6 py-3">
+                              <div className="flex items-center gap-3">
+                                <div className="w-9 h-9 rounded-full bg-primary-fixed flex items-center justify-center text-primary font-bold font-serif text-sm shrink-0">
+                                  {u.name.slice(0, 2)}
+                                </div>
+                                <div>
+                                  <p className="font-sans font-semibold text-primary text-sm">{u.name}</p>
+                                  <p className="text-xs text-primary/40 font-sans">{u.student_id}</p>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-6 py-3 hidden sm:table-cell">
+                              <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold font-sans ${statusMeta.bg}`}>
+                                <span className={`w-1.5 h-1.5 rounded-full ${statusMeta.dot}`} />
+                                {statusMeta.label}
+                              </span>
+                            </td>
+                            <td className="px-6 py-3 hidden lg:table-cell">
+                              <span className="text-xs text-primary/40 font-sans">
+                                {format(new Date(u.created_at), 'yyyy.MM.dd', { locale: ko })}
+                              </span>
+                            </td>
+                            <td className="px-6 py-3 text-right">
+                              {u.id !== currentUserId && isSuperAdmin && (
+                                <div className="flex justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <button onClick={() => handleDeleteUser(u)} disabled={loadingId === u.id}
+                                    className="p-2 rounded-lg text-primary/30 hover:text-error hover:bg-error-container/20 transition-colors disabled:opacity-50">
+                                    {loadingId === u.id ? <Loader2 size={14} className="animate-spin" /> : <span className="material-symbols-outlined text-[17px]">delete</span>}
+                                  </button>
+                                </div>
+                              )}
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             )}
-
-
-            <div className="bg-white rounded-2xl overflow-hidden shadow-sm" style={{ boxShadow: '0 4px 20px -4px rgba(1,45,29,0.08)' }}>
-              <table className="w-full text-left border-collapse">
-                <thead className="bg-surface border-b border-primary/5">
-                  <tr>
-                    <th className="px-6 py-4 text-[10px] font-extrabold uppercase tracking-widest text-primary/60 font-sans">회원 정보</th>
-                    <th className="px-6 py-4 text-[10px] font-extrabold uppercase tracking-widest text-primary/60 font-sans hidden md:table-cell">학년 · 반</th>
-                    <th className="px-6 py-4 text-[10px] font-extrabold uppercase tracking-widest text-primary/60 font-sans">역할</th>
-                    <th className="px-6 py-4 text-[10px] font-extrabold uppercase tracking-widest text-primary/60 font-sans hidden sm:table-cell">상태</th>
-                    <th className="px-6 py-4 text-[10px] font-extrabold uppercase tracking-widest text-primary/60 font-sans hidden lg:table-cell">가입일</th>
-                    <th className="px-6 py-4 text-right"></th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-primary/5">
-                  {filteredUsers.length === 0 ? (
-                    <tr>
-                      <td colSpan={6} className="py-16 text-center text-primary/30">
-                        <div className="flex flex-col items-center gap-2">
-                          <span className="material-symbols-outlined text-[36px]">search</span>
-                          <p className="text-sm font-sans">검색 결과가 없습니다.</p>
-                        </div>
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredUsers.map((u) => {
-                      const roleMeta = ROLE_LABELS[u.role] ?? ROLE_LABELS['student']
-                      const statusMeta = STATUS_LABELS[u.status] ?? STATUS_LABELS['pending']
-                      const initials = u.name.slice(0, 2)
-                      const avatarBg = u.role === 'teacher' || u.role === 'chief_editor'
-                        ? 'bg-primary-fixed'
-                        : u.role === 'editor'
-                          ? 'bg-[#ffdea5]'
-                          : 'bg-surface-container'
-                      return (
-                        <tr key={u.id} className="hover:bg-surface/40 transition-colors group">
-                          <td className="px-6 py-4">
-                            <div className="flex items-center gap-3">
-                              <div className={`w-10 h-10 rounded-full ${avatarBg} flex items-center justify-center text-primary font-bold font-serif text-sm shrink-0`}>
-                                {initials}
-                              </div>
-                              <div>
-                                <p className="font-sans font-semibold text-primary text-sm">{u.name}</p>
-                                <p className="text-xs text-primary/40 font-sans">{u.student_id}</p>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 hidden md:table-cell">
-                            {editingClassId === u.id ? (
-                              <div className="flex items-center gap-1">
-                                <select value={classForm.grade} onChange={(e) => setClassForm({ ...classForm, grade: e.target.value })}
-                                  className="px-1.5 py-1 rounded border border-primary/20 text-xs font-sans focus:outline-none w-16">
-                                  {[1,2,3].map((g) => <option key={g} value={g}>{g}학년</option>)}
-                                </select>
-                                <select value={classForm.classNum} onChange={(e) => setClassForm({ ...classForm, classNum: e.target.value })}
-                                  className="px-1.5 py-1 rounded border border-primary/20 text-xs font-sans focus:outline-none w-14">
-                                  {Array.from({length:10},(_,i)=>i+1).map((c) => <option key={c} value={c}>{c}반</option>)}
-                                </select>
-                                <input type="number" min={1} max={50} value={classForm.number}
-                                  onChange={(e) => setClassForm({ ...classForm, number: e.target.value })}
-                                  className="px-1.5 py-1 rounded border border-primary/20 text-xs font-sans focus:outline-none w-14" placeholder="번호" />
-                                <button onClick={() => saveClassInfo(u.id)} className="text-emerald-600 hover:text-emerald-700">
-                                  <span className="material-symbols-outlined text-[16px]">check</span>
-                                </button>
-                                <button onClick={() => setEditingClassId(null)} className="text-primary/30 hover:text-primary/60">
-                                  <span className="material-symbols-outlined text-[16px]">close</span>
-                                </button>
-                              </div>
-                            ) : (
-                              <div className="flex items-center gap-2 group/cell">
-                                <span className="text-sm text-primary/60 font-sans">{u.grade}학년 {u.class}반 {u.number}번</span>
-                                <button onClick={() => startEditClass(u)} className="opacity-0 group-hover/cell:opacity-100 transition-opacity text-primary/30 hover:text-secondary">
-                                  <span className="material-symbols-outlined text-[14px]">edit</span>
-                                </button>
-                              </div>
-                            )}
-                          </td>
-                          <td className="px-6 py-4">
-                            {u.role === 'teacher' ? (
-                              <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-extrabold tracking-wide uppercase font-sans ${roleMeta.bg} ${roleMeta.text}`}>
-                                {roleMeta.label}
-                              </span>
-                            ) : (
-                              <div className="relative inline-block">
-                                <select
-                                  value={u.role}
-                                  onChange={(e) => handleRoleChange(u.id, e.target.value)}
-                                  className={`appearance-none pl-2.5 pr-6 py-1 rounded-lg text-[10px] font-extrabold tracking-wide uppercase cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/15 font-sans ${roleMeta.bg} ${roleMeta.text}`}
-                                >
-                                  {ROLE_OPTIONS.map((opt) => (
-                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
-                                  ))}
-                                </select>
-                                <span className="material-symbols-outlined absolute right-1 top-1/2 -translate-y-1/2 pointer-events-none text-[12px] opacity-50">expand_more</span>
-                              </div>
-                            )}
-                          </td>
-                          <td className="px-6 py-4 hidden sm:table-cell">
-                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold font-sans ${statusMeta.bg}`}>
-                              <span className={`w-1.5 h-1.5 rounded-full ${statusMeta.dot}`} />
-                              {statusMeta.label}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 hidden lg:table-cell">
-                            <span className="text-xs text-primary/40 font-sans">
-                              {format(new Date(u.created_at), 'yyyy.MM.dd', { locale: ko })}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 text-right">
-                            <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                              {u.id !== currentUserId && (u.role !== 'teacher' || isSuperAdmin) && (
-                                <button
-                                  onClick={() => handleDeleteUser(u)}
-                                  disabled={loadingId === u.id}
-                                  className="p-2 rounded-lg text-primary/30 hover:text-error hover:bg-error-container/20 transition-colors disabled:opacity-50"
-                                >
-                                  {loadingId === u.id
-                                    ? <Loader2 size={15} className="animate-spin" />
-                                    : <span className="material-symbols-outlined text-[18px]">delete</span>
-                                  }
-                                </button>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      )
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
           </section>
         </div>
       )}
