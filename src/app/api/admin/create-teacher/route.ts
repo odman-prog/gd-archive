@@ -47,18 +47,17 @@ export async function POST(req: NextRequest) {
 
     const newUserId = authData.user.id
 
-    // profiles 테이블에 교사 프로필 생성
-    const teacherData: Record<string, unknown> = {
+    // profiles 테이블에 교사 프로필 생성 (upsert: 트리거로 미리 생성된 경우 덮어씀)
+    const { error: profileError } = await admin.from('profiles').upsert({
       id: newUserId,
       name: name.trim(),
       student_id: loginId.trim(),
       grade: 0,
+      class: 0,
       number: 0,
       role: 'teacher',
       status: 'approved',
-    }
-    teacherData['class'] = 0
-    const { error: profileError } = await admin.from('profiles').insert(teacherData)
+    })
 
     if (profileError) {
       // 프로필 생성 실패 시 auth user도 롤백
