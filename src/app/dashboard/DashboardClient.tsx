@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import {
   ChevronDown, ChevronUp, Globe, MessageSquare, XCircle, Trash2,
-  Star, StarOff, Loader2, X, FileText, Download, EyeOff, BarChart2, RotateCcw,
+  Star, StarOff, Loader2, X, FileText, Download, EyeOff, BarChart2, RotateCcw, ImagePlus,
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { ko } from 'date-fns/locale'
@@ -19,6 +19,7 @@ type Item = {
   created_at: string
   file_url: string | null
   file_name: string | null
+  cover_image_url?: string | null
   featured?: boolean
   reviewer_comment?: string | null
   resubmit_count?: number
@@ -57,6 +58,22 @@ export default function DashboardClient({
 
   const [revModal, setRevModal] = useState<{ id: string; title: string } | null>(null)
   const [revComment, setRevComment] = useState('')
+  const [uploadingCoverId, setUploadingCoverId] = useState<string | null>(null)
+
+  async function handleCoverUpload(id: string, file: File | undefined) {
+    if (!file) return
+    setUploadingCoverId(id)
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('id', id)
+      const res = await fetch('/api/dashboard/upload-cover', { method: 'POST', body: formData })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+      setPublished((p) => p.map((c) => c.id === id ? { ...c, cover_image_url: data.url } : c))
+    } catch (e) { alert(e instanceof Error ? e.message : '업로드 실패') }
+    setUploadingCoverId(null)
+  }
 
   async function callAPI(path: string, body: object) {
     const res = await fetch(path, {
@@ -232,6 +249,37 @@ export default function DashboardClient({
               <Download size={12} />
               열기
             </a>
+          </div>
+        )}
+
+        {/* 커버 이미지 업로드 — 발행 완료 탭, 편집부만 */}
+        {tab === 'published' && (role === 'editor' || role === 'chief_editor') && (
+          <div className="mt-3 pt-3 border-t border-[#012d1d]/8">
+            <p className="text-xs font-semibold text-[#012d1d]/40 mb-2">커버 이미지</p>
+            <div className="flex items-center gap-3">
+              {item.cover_image_url && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={item.cover_image_url}
+                  alt="커버"
+                  className="w-24 h-16 object-cover rounded-lg border border-[#012d1d]/10 shrink-0"
+                />
+              )}
+              <label className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#012d1d]/15 text-[#012d1d]/50 text-xs font-medium hover:bg-[#012d1d]/5 transition-colors w-fit ${uploadingCoverId === item.id ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
+                {uploadingCoverId === item.id
+                  ? <Loader2 size={12} className="animate-spin" />
+                  : <ImagePlus size={12} />
+                }
+                {item.cover_image_url ? '이미지 변경' : '커버 이미지 추가'}
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  disabled={uploadingCoverId === item.id}
+                  onChange={(e) => handleCoverUpload(item.id, e.target.files?.[0])}
+                />
+              </label>
+            </div>
           </div>
         )}
       </div>

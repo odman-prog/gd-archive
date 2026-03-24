@@ -4,7 +4,7 @@ import { useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useDropzone, FileRejection } from 'react-dropzone'
 import { createClient } from '@/lib/supabase/client'
-import { Upload, X, FileText, CheckCircle2, Loader2, Save, Send, ImagePlus } from 'lucide-react'
+import { Upload, X, FileText, CheckCircle2, Loader2, Save, Send } from 'lucide-react'
 
 const CATEGORIES = ['기사', '에세이', '인터뷰', '시/수필', '독서감상문', '수행평가', '교사의 서재']
 
@@ -22,8 +22,6 @@ const ACCEPT_TYPES = {
   'application/pdf': ['.pdf'],
   'application/vnd.hancom.hwpx': ['.hwpx'],
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
-  'image/jpeg': ['.jpg', '.jpeg'],
-  'image/png': ['.png'],
 }
 
 const MAX_SIZE = 20 * 1024 * 1024
@@ -47,8 +45,6 @@ export default function WriteForm({ userId }: { userId: string }) {
   const [summary, setSummary] = useState('')
   const [tags, setTags] = useState('')
   const [files, setFiles] = useState<UploadFile[]>([])
-  const [coverImage, setCoverImage] = useState<File | null>(null)
-  const [coverPreview, setCoverPreview] = useState<string>('')
   const [submitting, setSubmitting] = useState<Status | null>(null)
   const [done, setDone] = useState<Status | null>(null)
   const [error, setError] = useState('')
@@ -113,22 +109,6 @@ export default function WriteForm({ userId }: { userId: string }) {
     return results
   }
 
-  function handleCoverChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file) return
-    if (!file.type.startsWith('image/')) { setError('이미지 파일만 선택 가능합니다.'); return }
-    if (file.size > 10 * 1024 * 1024) { setError('커버 이미지는 최대 10MB입니다.'); return }
-    setCoverImage(file)
-    setCoverPreview(URL.createObjectURL(file))
-    setError('')
-  }
-
-  function removeCover() {
-    setCoverImage(null)
-    if (coverPreview) URL.revokeObjectURL(coverPreview)
-    setCoverPreview('')
-  }
-
   async function handleSubmit(status: Status) {
     setError('')
     if (!title.trim()) { setError('제목을 입력해주세요.'); return }
@@ -141,15 +121,6 @@ export default function WriteForm({ userId }: { userId: string }) {
     setSubmitting(status)
 
     try {
-      let cover_image_url: string | null = null
-      if (coverImage) {
-        const ext = coverImage.name.split('.').pop()
-        const coverPath = `covers/${userId}/${Date.now()}.${ext}`
-        const { error: coverErr } = await supabase.storage.from('uploads').upload(coverPath, coverImage, { upsert: false })
-        if (coverErr) throw new Error('커버 이미지 업로드 실패: ' + coverErr.message)
-        cover_image_url = supabase.storage.from('uploads').getPublicUrl(coverPath).data.publicUrl
-      }
-
       const uploadedFiles = files.length > 0 ? await uploadFiles() : []
       const failedFile = uploadedFiles.find((f) => f.state === 'error')
       if (failedFile) throw new Error(`파일 업로드 실패: ${failedFile.file.name}`)
@@ -166,7 +137,7 @@ export default function WriteForm({ userId }: { userId: string }) {
           excerpt: summary.trim() || null,
           tags: tagArray.length > 0 ? tagArray : null,
           status,
-          cover_image_url,
+          cover_image_url: null,
           file_url: firstFile?.storagePath ? supabase.storage.from('uploads').getPublicUrl(firstFile.storagePath).data.publicUrl : null,
           file_name: firstFile?.file.name ?? null,
         })
@@ -202,7 +173,7 @@ export default function WriteForm({ userId }: { userId: string }) {
         </div>
         <div className="flex gap-3 flex-wrap justify-center mt-2">
           <button
-            onClick={() => { setDone(null); setTitle(''); setCategory(''); setBody(''); setSummary(''); setTags(''); setFiles([]); removeCover() }}
+            onClick={() => { setDone(null); setTitle(''); setCategory(''); setBody(''); setSummary(''); setTags(''); setFiles([]) }}
             className="px-6 py-2.5 rounded-full border border-primary/15 text-primary/55 text-sm font-sans hover:border-primary/30 transition-colors"
           >
             새 글 쓰기
@@ -227,36 +198,6 @@ export default function WriteForm({ userId }: { userId: string }) {
   // ── 메인 폼 ────────────────────────────────────────
   return (
     <form onSubmit={(e) => e.preventDefault()} className="flex flex-col gap-10">
-
-      {/* 커버 이미지 */}
-      <div>
-        <div className="flex items-center justify-between mb-3">
-          <label className="font-sans text-[11px] font-bold uppercase tracking-[0.2em] text-primary/40">
-            커버 이미지
-          </label>
-          <span className="font-sans text-[10px] text-primary/25">선택 · 아카이브 카드에 표시</span>
-        </div>
-        {coverPreview ? (
-          <div className="relative rounded-2xl overflow-hidden border border-primary/8 aspect-[21/8]">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={coverPreview} alt="커버 미리보기" className="w-full h-full object-cover" />
-            <button
-              type="button"
-              onClick={removeCover}
-              className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/50 backdrop-blur text-white flex items-center justify-center hover:bg-black/70 transition-colors"
-            >
-              <X size={13} />
-            </button>
-          </div>
-        ) : (
-          <label className="flex flex-col items-center justify-center gap-2.5 aspect-[21/8] border border-dashed border-primary/15 rounded-2xl cursor-pointer hover:border-primary/30 hover:bg-primary/2 transition-all bg-primary/[0.02]">
-            <ImagePlus size={20} className="text-primary/20" />
-            <span className="font-sans text-xs text-primary/30">클릭하여 이미지 선택</span>
-            <span className="font-sans text-[10px] text-primary/20">JPG, PNG · 최대 10MB</span>
-            <input type="file" accept="image/*" className="hidden" onChange={handleCoverChange} />
-          </label>
-        )}
-      </div>
 
       {/* 제목 */}
       <div className="border-b border-primary/10 pb-1">
@@ -371,7 +312,7 @@ export default function WriteForm({ userId }: { userId: string }) {
           <p className="font-sans text-xs text-primary/40">
             {isDragActive ? '파일을 놓으세요' : '드래그 또는 클릭하여 파일 추가'}
           </p>
-          <p className="font-sans text-[10px] text-primary/20 mt-1">PDF · HWPX · DOCX · JPG · PNG</p>
+          <p className="font-sans text-[10px] text-primary/20 mt-1">PDF · HWPX · DOCX</p>
         </div>
 
         {files.length > 0 && (

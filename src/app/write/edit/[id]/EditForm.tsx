@@ -4,15 +4,13 @@ import { useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useDropzone, FileRejection } from 'react-dropzone'
 import { createClient } from '@/lib/supabase/client'
-import { Upload, X, FileText, CheckCircle2, Loader2, Save, Send, Paperclip, ImagePlus } from 'lucide-react'
+import { Upload, X, FileText, CheckCircle2, Loader2, Save, Send, Paperclip } from 'lucide-react'
 
 const CATEGORIES = ['기사', '에세이', '인터뷰', '시/수필', '독서감상문', '수행평가', '교사의 서재']
 const ACCEPT_TYPES = {
   'application/pdf': ['.pdf'],
   'application/vnd.hancom.hwpx': ['.hwpx'],
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
-  'image/jpeg': ['.jpg', '.jpeg'],
-  'image/png': ['.png'],
 }
 const MAX_SIZE = 20 * 1024 * 1024
 
@@ -51,9 +49,6 @@ export default function EditForm({ content }: { content: Content }) {
   const [tags, setTags] = useState((content.tags ?? []).join(', '))
   const [newFile, setNewFile] = useState<UploadFile | null>(null)
   const [keepExisting, setKeepExisting] = useState(true)
-  const [newCover, setNewCover] = useState<File | null>(null)
-  const [coverPreview, setCoverPreview] = useState<string>(content.cover_image_url ?? '')
-  const [keepCover, setKeepCover] = useState(!!content.cover_image_url)
   const [submitting, setSubmitting] = useState<'draft' | 'submitted' | null>(null)
   const [done, setDone] = useState(false)
   const [error, setError] = useState('')
@@ -90,16 +85,6 @@ export default function EditForm({ content }: { content: Content }) {
     setSubmitting(status)
 
     try {
-      // 커버 이미지 처리
-      let cover_image_url = keepCover ? content.cover_image_url : null
-      if (newCover) {
-        const ext = newCover.name.split('.').pop()
-        const coverPath = `covers/${content.id}/${Date.now()}.${ext}`
-        const { error: coverErr } = await supabase.storage.from('uploads').upload(coverPath, newCover, { upsert: true })
-        if (coverErr) throw new Error('커버 이미지 업로드 실패: ' + coverErr.message)
-        cover_image_url = supabase.storage.from('uploads').getPublicUrl(coverPath).data.publicUrl
-      }
-
       let file_url = keepExisting ? content.file_url : null
       let file_name = keepExisting ? content.file_name : null
 
@@ -132,7 +117,6 @@ export default function EditForm({ content }: { content: Content }) {
           excerpt: excerpt.trim() || null,
           tags: tagArray.length > 0 ? tagArray : null,
           status,
-          cover_image_url,
           file_url,
           file_name,
           ...(isResubmit ? { resubmit_count: content.resubmit_count + 1 } : {}),
@@ -167,56 +151,8 @@ export default function EditForm({ content }: { content: Content }) {
     )
   }
 
-  function handleCoverChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file) return
-    if (!file.type.startsWith('image/')) { setError('이미지 파일만 선택 가능합니다.'); return }
-    if (file.size > 10 * 1024 * 1024) { setError('커버 이미지는 최대 10MB입니다.'); return }
-    setNewCover(file)
-    setCoverPreview(URL.createObjectURL(file))
-    setKeepCover(false)
-    setError('')
-  }
-
-  function removeCover() {
-    setNewCover(null)
-    setKeepCover(false)
-    setCoverPreview('')
-  }
-
   return (
     <form onSubmit={(e) => e.preventDefault()} className="flex flex-col gap-6">
-      {/* 커버 이미지 */}
-      <div>
-        <label className="block text-sm font-semibold text-[#012d1d] mb-1.5">
-          커버 이미지 <span className="text-[#012d1d]/40 font-normal text-xs">(선택 · 아카이브 카드에 표시)</span>
-        </label>
-        {coverPreview ? (
-          <div className="relative rounded-xl overflow-hidden border border-[#012d1d]/10 aspect-[16/7]">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={coverPreview} alt="커버 미리보기" className="w-full h-full object-cover" />
-            <button
-              type="button"
-              onClick={removeCover}
-              className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-black/70 transition-colors"
-            >
-              <X size={14} />
-            </button>
-            <label className="absolute bottom-2 right-2 px-3 py-1.5 rounded-full bg-black/50 text-white text-xs cursor-pointer hover:bg-black/70 transition-colors">
-              변경
-              <input type="file" accept="image/*" className="hidden" onChange={handleCoverChange} />
-            </label>
-          </div>
-        ) : (
-          <label className="flex flex-col items-center justify-center gap-2 aspect-[16/7] border-2 border-dashed border-[#012d1d]/20 rounded-xl cursor-pointer hover:border-[#012d1d]/40 transition-colors bg-[#fdf9ee]/50">
-            <ImagePlus size={24} className="text-[#012d1d]/25" />
-            <span className="text-sm text-[#012d1d]/40">클릭하여 이미지 선택</span>
-            <span className="text-xs text-[#012d1d]/25">JPG, PNG, WEBP · 최대 10MB</span>
-            <input type="file" accept="image/*" className="hidden" onChange={handleCoverChange} />
-          </label>
-        )}
-      </div>
-
       {/* 제목 */}
       <div>
         <label className="block text-sm font-semibold text-[#012d1d] mb-1.5">
@@ -317,7 +253,7 @@ export default function EditForm({ content }: { content: Content }) {
             <p className="text-sm text-[#012d1d]/60">
               {isDragActive ? '파일을 여기에 놓으세요' : '클릭하거나 파일을 드래그해 주세요'}
             </p>
-            <p className="text-xs text-[#012d1d]/30 mt-1">PDF, HWPX, DOCX, JPG, PNG · 최대 20MB</p>
+            <p className="text-xs text-[#012d1d]/30 mt-1">PDF, HWPX, DOCX · 최대 20MB</p>
           </div>
         )}
 

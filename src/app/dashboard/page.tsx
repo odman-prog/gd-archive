@@ -38,7 +38,7 @@ export default async function DashboardPage() {
   // 발행 완료 (published)
   const { data: publishedRaw } = await supabase
     .from('contents')
-    .select('id, title, excerpt, body, category, status, created_at, author_id, file_url, file_name, reviewer_comment, resubmit_count, featured')
+    .select('id, title, excerpt, body, category, status, created_at, author_id, file_url, file_name, reviewer_comment, resubmit_count, featured, cover_image_url')
     .eq('status', 'published')
     .order('created_at', { ascending: false })
 
