@@ -50,6 +50,19 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: '이미 사용 중인 아이디입니다.' }, { status: 409 })
     }
 
+    // 학년·반·번호 중복 체크 (동일 학생 정보로 중복 가입 방지)
+    const { data: dupStudent } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('grade', Number(grade))
+      .eq('class', Number(classNum))
+      .eq('number', Number(number))
+      .maybeSingle()
+
+    if (dupStudent) {
+      return NextResponse.json({ error: '이미 해당 학번으로 가입된 계정이 있습니다.' }, { status: 409 })
+    }
+
     // Auth 계정 생성 (이메일 확인 없이 바로 활성화)
     const { data: authData, error: authError } = await supabase.auth.admin.createUser({
       email,
