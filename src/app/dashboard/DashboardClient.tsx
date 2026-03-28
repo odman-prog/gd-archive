@@ -252,8 +252,8 @@ export default function DashboardClient({
           </div>
         )}
 
-        {/* 커버 이미지 업로드 — 발행 완료 탭, 편집부만 */}
-        {tab === 'published' && (role === 'editor' || role === 'chief_editor') && (
+        {/* 커버 이미지 업로드 — 발행 완료 탭, 편집부 및 교사 */}
+        {tab === 'published' && (role === 'editor' || role === 'chief_editor' || role === 'teacher') && (
           <div className="mt-3 pt-3 border-t border-[#012d1d]/8">
             <p className="text-xs font-semibold text-[#012d1d]/40 mb-2">커버 이미지</p>
             <div className="flex items-center gap-3">

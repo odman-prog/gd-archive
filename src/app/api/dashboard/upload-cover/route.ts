@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
       .eq('id', user.id)
       .single()
 
-    if (!['editor', 'chief_editor'].includes(profile?.role ?? '')) {
+    if (!['editor', 'chief_editor', 'teacher'].includes(profile?.role ?? '')) {
       return NextResponse.json({ error: '편집부 권한이 필요합니다.' }, { status: 403 })
     }
 

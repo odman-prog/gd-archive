@@ -14,17 +14,22 @@ const navLinks = [
   { href: '/archive', label: '아카이브' },
   { href: '/teacher', label: '교사의 서재' },
   { href: '/magazine', label: '교지' },
-  { href: '/write', label: '기록하기' },
+  { href: '/write', label: '글 쓰기' },
 ]
 
 const EDITOR_ROLES = ['editor', 'chief_editor', 'teacher']
 
-export default function Header() {
+type Props = {
+  initialUser: { id: string; email?: string } | null
+  initialRole: string | null
+}
+
+export default function Header({ initialUser, initialRole }: Props) {
   const router = useRouter()
   const pathname = usePathname()
   const [isOpen, setIsOpen] = useState(false)
-  const [user, setUser] = useState<SupabaseUser | null>(null)
-  const [role, setRole] = useState<string | null>(null)
+  const [user, setUser] = useState<SupabaseUser | null>(initialUser as SupabaseUser | null)
+  const [role, setRole] = useState<string | null>(initialRole)
   const [profileOpen, setProfileOpen] = useState(false)
 
   const fetchRole = useCallback(async (userId: string) => {
@@ -33,10 +38,13 @@ export default function Header() {
   }, [])
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      setUser(user)
-      if (user) fetchRole(user.id)
-    })
+    // initialUser가 없을 때만 getUser 호출 (불필요한 네트워크 요청 방지)
+    if (!initialUser) {
+      supabase.auth.getUser().then(({ data: { user } }) => {
+        setUser(user)
+        if (user) fetchRole(user.id)
+      })
+    }
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null)
@@ -45,7 +53,7 @@ export default function Header() {
     })
 
     return () => subscription.unsubscribe()
-  }, [fetchRole])
+  }, [fetchRole, initialUser])
 
   async function handleLogout() {
     await supabase.auth.signOut()

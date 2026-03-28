@@ -13,12 +13,10 @@ export default function Footer() {
           </p>
         </div>
 
-        {/* 링크 */}
+        {/* 보조 링크 */}
         <div className="flex flex-wrap justify-center gap-8">
-          <Link href="/archive" className="font-sans text-sm tracking-wide uppercase text-cream/60 hover:text-secondary transition-colors">아카이브</Link>
-          <Link href="/write" className="font-sans text-sm tracking-wide uppercase text-cream/60 hover:text-secondary transition-colors">글 올리기</Link>
-          <Link href="/auth" className="font-sans text-sm tracking-wide uppercase text-cream/60 hover:text-secondary transition-colors">로그인</Link>
-          <Link href="/mypage" className="font-sans text-sm tracking-wide uppercase text-cream/60 hover:text-secondary transition-colors">마이페이지</Link>
+          <Link href="/magazine" className="font-sans text-sm tracking-wide uppercase text-cream/60 hover:text-secondary transition-colors">교지</Link>
+          <Link href="/teacher" className="font-sans text-sm tracking-wide uppercase text-cream/60 hover:text-secondary transition-colors">교사의 서재</Link>
         </div>
 
         {/* 공유 & 복사 아이콘 */}

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import './globals.css'
+import { createClient } from '@/lib/supabase/server'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import BottomNav from '@/components/BottomNav'
@@ -19,11 +20,29 @@ export const metadata: Metadata = {
   },
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  // 서버에서 세션 미리 조회 → Header 초기 렌더에서 auth 깜빡임 방지
+  const supabase = createClient()
+  const { data: { session } } = await supabase.auth.getSession()
+
+  let initialRole: string | null = null
+  if (session?.user) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', session.user.id)
+      .single()
+    initialRole = profile?.role ?? null
+  }
+
+  const initialUser = session?.user
+    ? { id: session.user.id, email: session.user.email }
+    : null
+
   return (
     <html lang="ko">
       <head>
@@ -46,7 +65,7 @@ export default function RootLayout({
         <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon-v3.png" />
       </head>
       <body className="flex flex-col min-h-screen bg-cream font-sans">
-        <Header />
+        <Header initialUser={initialUser} initialRole={initialRole} />
         <main className="flex-1 pb-28 md:pb-0">
           {children}
         </main>

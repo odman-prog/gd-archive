@@ -14,7 +14,17 @@ export default async function EditPage({ params }: { params: { id: string } }) {
     .single()
 
   if (!content) notFound()
-  if (content.author_id !== user.id) notFound()
+
+  // 편집자/교사는 모든 글 수정 가능, 학생은 본인 글만
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+
+  const isEditor = ['editor', 'chief_editor', 'teacher'].includes(profile?.role ?? '')
+  if (content.author_id !== user.id && !isEditor) notFound()
+
   if (!['draft', 'revision', 'rejected'].includes(content.status)) {
     redirect('/mypage')
   }

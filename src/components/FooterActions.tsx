@@ -2,6 +2,27 @@
 
 import { useState } from 'react'
 
+function ShareIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="18" cy="5" r="3" />
+      <circle cx="6" cy="12" r="3" />
+      <circle cx="18" cy="19" r="3" />
+      <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+      <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+    </svg>
+  )
+}
+
+function CopyIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+    </svg>
+  )
+}
+
 export default function FooterActions() {
   const [copied, setCopied] = useState(false)
 
@@ -36,14 +57,14 @@ export default function FooterActions() {
         aria-label="공유"
         className="text-cream/40 hover:text-secondary cursor-pointer transition-colors"
       >
-        <span className="material-symbols-outlined">share</span>
+        <ShareIcon />
       </button>
       <button
         onClick={handleCopy}
         aria-label="링크 복사"
         className="text-cream/40 hover:text-secondary cursor-pointer transition-colors"
       >
-        <span className="material-symbols-outlined">content_copy</span>
+        <CopyIcon />
       </button>
     </div>
   )

@@ -7,13 +7,14 @@ import ContentCard from '@/components/ContentCard'
 export const revalidate = 60 // 60초 ISR 캐싱
 
 async function getStats(supabase: ReturnType<typeof createClient>) {
-  const [contents, profiles] = await Promise.all([
+  const [contentsCount, authorData] = await Promise.all([
     supabase.from('contents').select('id', { count: 'exact', head: true }).eq('status', 'published'),
-    supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('status', 'approved'),
+    supabase.from('contents').select('author_id').eq('status', 'published'),
   ])
+  const studentCount = new Set(authorData.data?.map((r) => r.author_id)).size
   return {
-    contentCount: contents.count ?? 0,
-    studentCount: profiles.count ?? 0,
+    contentCount: contentsCount.count ?? 0,
+    studentCount,
   }
 }
 
@@ -74,6 +75,8 @@ export default async function Home() {
           <img
             src="/hero-archive.png"
             alt=""
+            fetchPriority="high"
+            decoding="async"
             className="w-full h-full object-cover object-top"
             style={{ height: 'calc(100% - 8px)', marginBottom: '-8px' }}
           />
@@ -136,6 +139,8 @@ export default async function Home() {
                       <img
                         src={mainFeatured.cover_image_url}
                         alt={mainFeatured.title}
+                        loading="lazy"
+                        decoding="async"
                         className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
                       />
                     ) : (
@@ -143,6 +148,8 @@ export default async function Home() {
                       <img
                         src="/hero-document.png"
                         alt="featured article"
+                        loading="lazy"
+                        decoding="async"
                         className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
                       />
                     )}
@@ -171,7 +178,10 @@ export default async function Home() {
                     <div className="flex items-center gap-4 text-sm font-sans text-on-surface-variant/60">
                       <span>{mainFeatured.category ?? 'Editorial'}</span>
                       <span className="w-1 h-1 bg-outline-variant rounded-full" />
-                      <span>{mainFeatured.view_count ?? 0} views</span>
+                      <span className="flex items-center gap-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                        {(mainFeatured.view_count ?? 0).toLocaleString()}
+                      </span>
                     </div>
                   </div>
                 </Link>
@@ -189,6 +199,8 @@ export default async function Home() {
                         <img
                           src={secondaryFeatured.cover_image_url}
                           alt={secondaryFeatured.title}
+                          loading="lazy"
+                          decoding="async"
                           className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
                         />
                       ) : (
@@ -196,6 +208,8 @@ export default async function Home() {
                         <img
                           src="/hero-archive.png"
                           alt="secondary featured"
+                          loading="lazy"
+                          decoding="async"
                           className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
                         />
                       )}

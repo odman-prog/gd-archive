@@ -63,7 +63,7 @@ export default function ArchiveView({ contents, total, allTags, category, tag, s
       {/* ── 히어로 ───────────────────────────────────── */}
       <div className="relative h-[420px] md:h-[540px] overflow-hidden">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/i.png" alt="" className="w-full h-full object-cover object-center" />
+        <img src="/i.png" alt="" fetchPriority="high" decoding="async" className="w-full h-full object-cover object-center" />
         <div className="absolute inset-0 bg-gradient-to-b from-primary/50 via-primary/30 to-surface" />
         <div className="absolute inset-0 bg-gradient-to-r from-primary/40 to-transparent" />
 

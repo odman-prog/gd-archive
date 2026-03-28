@@ -60,6 +60,8 @@ export default function ContentCard({ content }: { content: Content }) {
             <img
               src={content.cover_image_url}
               alt={content.title}
+              loading="lazy"
+              decoding="async"
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             />
           ) : (

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo, useRef } from 'react'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { Loader2, BookOpen, Plus, Upload, UserPlus } from 'lucide-react'
 import { format } from 'date-fns'
@@ -355,6 +356,13 @@ export default function AdminClient({
             {label}
           </button>
         ))}
+        <Link
+          href="/admin/review"
+          className="flex items-center gap-2 px-5 py-3 text-sm font-sans font-semibold border-b-2 -mb-px border-transparent text-primary/40 hover:text-primary/70 transition-colors tracking-wide"
+        >
+          <span className="material-symbols-outlined text-[18px]">rate_review</span>
+          글 검수
+        </Link>
       </div>
 
       {/* ══════════════════════════════════════════════════
