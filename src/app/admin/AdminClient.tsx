@@ -578,11 +578,11 @@ export default function AdminClient({
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-widest text-primary/50 mb-1.5 font-sans">비밀번호 * (6자 이상)</label>
-                    <input type="password" required minLength={6}
+                    <label className="block text-[10px] font-bold uppercase tracking-widest text-primary/50 mb-1.5 font-sans">비밀번호 * (8자 이상, 영문+숫자)</label>
+                    <input type="password" required minLength={8}
                       value={teacherForm.password}
                       onChange={(e) => setTeacherForm({ ...teacherForm, password: e.target.value })}
-                      placeholder="6자 이상"
+                      placeholder="8자 이상, 영문+숫자 포함"
                       className="w-full px-3 py-2.5 rounded-lg border border-primary/15 text-sm focus:outline-none focus:ring-2 focus:ring-primary/15 font-sans"
                     />
                   </div>

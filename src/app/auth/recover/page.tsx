@@ -26,6 +26,7 @@ export default function RecoverPage() {
   const [resetLoading, setResetLoading] = useState(false)
   const [resetError, setResetError] = useState('')
   const [resetDone, setResetDone] = useState(false)
+  const [resetToken, setResetToken] = useState('')
 
   async function handleFindId(e: React.FormEvent) {
     e.preventDefault()
@@ -63,6 +64,7 @@ export default function RecoverPage() {
     const json = await res.json()
     setVerifyLoading(false)
     if (!res.ok) { setVerifyError(json.error); return }
+    setResetToken(json.resetToken)
     setStep(2)
   }
 
@@ -70,18 +72,20 @@ export default function RecoverPage() {
     e.preventDefault()
     setResetError('')
     const { password, confirm } = pwForm
-    if (!password || password.length < 6) {
-      setResetError('비밀번호는 6자 이상이어야 합니다.'); return
+    if (!password || password.length < 8) {
+      setResetError('비밀번호는 8자 이상이어야 합니다.'); return
+    }
+    if (!/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) {
+      setResetError('비밀번호에 영문자와 숫자를 모두 포함해야 합니다.'); return
     }
     if (password !== confirm) {
       setResetError('비밀번호가 일치하지 않습니다.'); return
     }
     setResetLoading(true)
-    const { studentId, name, grade, classNum, number } = verifyForm
     const res = await fetch('/api/auth/reset-password', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ studentId, name, grade, classNum, number, newPassword: password }),
+      body: JSON.stringify({ resetToken, newPassword: password }),
     })
     const json = await res.json()
     setResetLoading(false)

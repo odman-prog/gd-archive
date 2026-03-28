@@ -1,6 +1,7 @@
 import { createClient as createAdminClient } from '@supabase/supabase-js'
-import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
+import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
+import { consumeResetToken } from '@/lib/reset-token'
 
 function getAdminClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -13,32 +14,32 @@ function getAdminClient() {
 
 export async function POST(req: NextRequest) {
   try {
-    const { studentId, name, grade, classNum, number, newPassword } = await req.json()
-
-    if (!studentId?.trim() || !name?.trim() || !grade || !classNum || !number) {
-      return NextResponse.json({ error: '모든 항목을 입력해주세요.' }, { status: 400 })
-    }
-    if (!newPassword || newPassword.length < 6) {
-      return NextResponse.json({ error: '비밀번호는 6자 이상이어야 합니다.' }, { status: 400 })
+    // IP당 15분에 5회로 제한
+    const ip = getClientIp(req)
+    if (!checkRateLimit(`reset-pw:${ip}`, 5, 15 * 60 * 1000)) {
+      return NextResponse.json({ error: '요청이 너무 많습니다. 잠시 후 다시 시도해주세요.' }, { status: 429 })
     }
 
-    const supabase = createClient()
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('student_id', studentId.trim())
-      .eq('name', name.trim())
-      .eq('grade', Number(grade))
-      .eq('class', Number(classNum))
-      .eq('number', Number(number))
-      .maybeSingle()
+    const { resetToken, newPassword } = await req.json()
 
-    if (!profile) {
-      return NextResponse.json({ error: '입력 정보가 일치하지 않습니다.' }, { status: 404 })
+    if (!resetToken) {
+      return NextResponse.json({ error: '인증 토큰이 필요합니다. 본인 확인을 다시 진행해주세요.' }, { status: 400 })
+    }
+    if (!newPassword || newPassword.length < 8) {
+      return NextResponse.json({ error: '비밀번호는 8자 이상이어야 합니다.' }, { status: 400 })
+    }
+    if (!/[A-Za-z]/.test(newPassword) || !/[0-9]/.test(newPassword)) {
+      return NextResponse.json({ error: '비밀번호에 영문자와 숫자를 모두 포함해야 합니다.' }, { status: 400 })
+    }
+
+    // 토큰 소비 (1회용 + 만료 검증)
+    const profileId = consumeResetToken(resetToken)
+    if (!profileId) {
+      return NextResponse.json({ error: '인증 토큰이 만료되었거나 유효하지 않습니다. 본인 확인을 다시 진행해주세요.' }, { status: 401 })
     }
 
     const admin = getAdminClient()
-    const { error } = await admin.auth.admin.updateUserById(profile.id, { password: newPassword })
+    const { error } = await admin.auth.admin.updateUserById(profileId, { password: newPassword })
 
     if (error) {
       return NextResponse.json({ error: '비밀번호 변경 실패: ' + error.message }, { status: 500 })

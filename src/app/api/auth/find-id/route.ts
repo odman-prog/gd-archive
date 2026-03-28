@@ -1,8 +1,15 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
+import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
 
 export async function POST(req: NextRequest) {
   try {
+    // IP당 15분에 10회로 제한
+    const ip = getClientIp(req)
+    if (!checkRateLimit(`find-id:${ip}`, 10, 15 * 60 * 1000)) {
+      return NextResponse.json({ error: '요청이 너무 많습니다. 잠시 후 다시 시도해주세요.' }, { status: 429 })
+    }
+
     const { name, grade, classNum, number } = await req.json()
 
     if (!name?.trim() || !grade || !classNum || !number) {

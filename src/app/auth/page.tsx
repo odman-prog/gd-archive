@@ -71,8 +71,12 @@ export default function AuthPage() {
       setError('아이디는 영문·숫자·_만 사용 가능하며 3~20자입니다.')
       return
     }
-    if (password.length < 6) {
-      setError('비밀번호는 6자 이상이어야 합니다.')
+    if (password.length < 8) {
+      setError('비밀번호는 8자 이상이어야 합니다.')
+      return
+    }
+    if (!/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) {
+      setError('비밀번호에 영문자와 숫자를 모두 포함해야 합니다.')
       return
     }
 
@@ -253,7 +257,7 @@ export default function AuthPage() {
                 </div>
               </div>
               <div>
-                <label className="block text-[10px] font-bold text-primary/40 uppercase tracking-widest mb-2">비밀번호 <span className="normal-case font-normal">(6자 이상)</span></label>
+                <label className="block text-[10px] font-bold text-primary/40 uppercase tracking-widest mb-2">비밀번호 <span className="normal-case font-normal">(8자 이상, 영문+숫자 포함)</span></label>
                 <div className="relative">
                   <input
                     type={showPassword ? 'text' : 'password'}

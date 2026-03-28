@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
+import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
 
 // 서비스 롤 클라이언트 (서버에서만 사용)
 function getAdminClient() {
@@ -13,6 +14,12 @@ function getAdminClient() {
 
 export async function POST(req: NextRequest) {
   try {
+    // IP당 15분에 5회로 제한
+    const ip = getClientIp(req)
+    if (!checkRateLimit(`signup:${ip}`, 5, 15 * 60 * 1000)) {
+      return NextResponse.json({ error: '요청이 너무 많습니다. 잠시 후 다시 시도해주세요.' }, { status: 429 })
+    }
+
     const { name, loginId, grade, classNum, number, password } = await req.json()
 
     // 기본 유효성 검사
@@ -22,8 +29,11 @@ export async function POST(req: NextRequest) {
     if (!/^[a-zA-Z0-9_]{3,20}$/.test(loginId)) {
       return NextResponse.json({ error: '아이디는 영문·숫자·_만 사용 가능하며 3~20자입니다.' }, { status: 400 })
     }
-    if (password.length < 6) {
-      return NextResponse.json({ error: '비밀번호는 6자 이상이어야 합니다.' }, { status: 400 })
+    if (password.length < 8) {
+      return NextResponse.json({ error: '비밀번호는 8자 이상이어야 합니다.' }, { status: 400 })
+    }
+    if (!/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) {
+      return NextResponse.json({ error: '비밀번호에 영문자와 숫자를 모두 포함해야 합니다.' }, { status: 400 })
     }
 
     const supabase = getAdminClient()

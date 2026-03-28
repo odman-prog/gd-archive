@@ -35,8 +35,13 @@ export async function POST(req: NextRequest) {
     if (!file.type.startsWith('image/')) return NextResponse.json({ error: '이미지 파일만 가능합니다.' }, { status: 400 })
     if (file.size > 10 * 1024 * 1024) return NextResponse.json({ error: '이미지는 최대 10MB입니다.' }, { status: 400 })
 
+    const ALLOWED_EXTS = ['jpg', 'jpeg', 'png', 'gif', 'webp']
+    const ext = (file.name.split('.').pop() ?? '').toLowerCase()
+    if (!ALLOWED_EXTS.includes(ext)) {
+      return NextResponse.json({ error: '허용된 이미지 형식: jpg, jpeg, png, gif, webp' }, { status: 400 })
+    }
+
     const admin = getAdminClient()
-    const ext = file.name.split('.').pop() ?? 'jpg'
     const path = `covers/editorial/${id}_${Date.now()}.${ext}`
 
     const arrayBuffer = await file.arrayBuffer()

@@ -19,7 +19,8 @@ export default function ChangePasswordForm() {
     setError('')
 
     if (!form.current) { setError('현재 비밀번호를 입력해주세요.'); return }
-    if (form.next.length < 6) { setError('새 비밀번호는 6자 이상이어야 합니다.'); return }
+    if (form.next.length < 8) { setError('새 비밀번호는 8자 이상이어야 합니다.'); return }
+    if (!/[A-Za-z]/.test(form.next) || !/[0-9]/.test(form.next)) { setError('비밀번호에 영문자와 숫자를 모두 포함해야 합니다.'); return }
     if (form.next !== form.confirm) { setError('새 비밀번호가 일치하지 않습니다.'); return }
 
     setLoading(true)
@@ -87,7 +88,7 @@ export default function ChangePasswordForm() {
                 <label className="text-[10px] font-bold text-primary/50 uppercase tracking-widest px-1 font-sans">새 비밀번호</label>
                 <input
                   type="password"
-                  placeholder="새 비밀번호 (6자 이상)"
+                  placeholder="새 비밀번호 (8자 이상, 영문+숫자)"
                   value={form.next}
                   onChange={(e) => setForm({ ...form, next: e.target.value })}
                   className={inputClass}

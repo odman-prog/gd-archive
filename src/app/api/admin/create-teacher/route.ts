@@ -24,7 +24,8 @@ export async function POST(req: NextRequest) {
     const { name, loginId, password } = await req.json()
     if (!name?.trim()) return NextResponse.json({ error: '이름을 입력해주세요.' }, { status: 400 })
     if (!loginId?.trim()) return NextResponse.json({ error: '로그인 ID를 입력해주세요.' }, { status: 400 })
-    if (!password || password.length < 6) return NextResponse.json({ error: '비밀번호는 6자 이상이어야 합니다.' }, { status: 400 })
+    if (!password || password.length < 8) return NextResponse.json({ error: '비밀번호는 8자 이상이어야 합니다.' }, { status: 400 })
+    if (!/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) return NextResponse.json({ error: '비밀번호에 영문자와 숫자를 모두 포함해야 합니다.' }, { status: 400 })
 
     const admin = getAdminClient()
 
