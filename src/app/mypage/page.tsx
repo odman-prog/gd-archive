@@ -5,6 +5,7 @@ import { FileText, Eye, Heart, CheckCircle2, PenLine } from 'lucide-react'
 import MyContentList from './MyContentList'
 import ProfileEditor from './ProfileEditor'
 import DeleteAccountButton from './DeleteAccountButton'
+import ChangePasswordForm from './ChangePasswordForm'
 
 export default async function MyPage() {
   const supabase = createClient()
@@ -74,6 +75,9 @@ export default async function MyPage() {
           </div>
         ))}
       </div>
+
+      {/* 비밀번호 변경 */}
+      <ChangePasswordForm />
 
       {/* 내 글 목록 */}
       <div className="flex items-center justify-between mb-5 border-b border-primary/10 pb-4">

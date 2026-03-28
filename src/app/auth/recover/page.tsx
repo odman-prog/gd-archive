@@ -55,9 +55,14 @@ export default function RecoverPage() {
       setVerifyError('모든 항목을 입력해주세요.'); return
     }
     setVerifyLoading(true)
-    // 본인 확인: reset-password API에서 검증하므로 여기서는 간단 validation
-    // 실제 검증은 step 2 제출 시 reset-password API에서 수행
+    const res = await fetch('/api/auth/verify-identity', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ studentId, name, grade, classNum, number }),
+    })
+    const json = await res.json()
     setVerifyLoading(false)
+    if (!res.ok) { setVerifyError(json.error); return }
     setStep(2)
   }
 
@@ -97,7 +102,7 @@ export default function RecoverPage() {
             <h1 className="font-serif text-4xl lg:text-5xl text-primary font-bold tracking-tight mb-4">아이디 찾기</h1>
             <p className="text-on-surface-variant leading-relaxed font-sans text-sm">
               가입 시 등록한 이름과 학년·반·번호를 입력해 주세요.<br />
-              정보가 일치하면 등록된 학번을 안내해 드립니다.
+              정보가 일치하면 등록된 아이디를 안내해 드립니다.
             </p>
           </div>
 
@@ -163,7 +168,7 @@ export default function RecoverPage() {
               <div className="flex items-center gap-3 px-5 py-4 bg-primary-fixed rounded-lg">
                 <span className="material-symbols-outlined text-primary text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-primary/60 font-sans">확인된 학번</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-primary/60 font-sans">확인된 아이디</p>
                   <p className="font-serif text-2xl font-bold text-primary">{findResult}</p>
                 </div>
               </div>
@@ -202,7 +207,7 @@ export default function RecoverPage() {
             <span className="text-xs tracking-widest uppercase text-secondary mb-2 block font-bold font-sans">Security Access</span>
             <h2 className="font-serif text-4xl lg:text-5xl text-primary font-bold tracking-tight mb-4">비밀번호 재설정</h2>
             <p className="text-on-surface-variant leading-relaxed font-sans text-sm">
-              학번과 본인 정보로 인증 후<br />
+              아이디와 본인 정보로 인증 후<br />
               새로운 비밀번호를 설정할 수 있습니다.
             </p>
           </div>
@@ -233,10 +238,10 @@ export default function RecoverPage() {
                 </div>
                 <form onSubmit={handleVerify} className="space-y-4">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-primary/60 uppercase tracking-widest px-1 font-sans">학번</label>
+                    <label className="text-[10px] font-bold text-primary/60 uppercase tracking-widest px-1 font-sans">아이디</label>
                     <input
                       type="text"
-                      placeholder="예) 30201"
+                      placeholder="예) hong01"
                       value={verifyForm.studentId}
                       onChange={(e) => setVerifyForm({ ...verifyForm, studentId: e.target.value })}
                       className="w-full bg-surface-container-high border-0 focus:ring-2 focus:ring-secondary/30 rounded-lg px-4 py-3.5 text-primary placeholder:text-outline font-sans text-sm"
