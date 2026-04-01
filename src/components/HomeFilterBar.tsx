@@ -32,7 +32,7 @@ export default function HomeFilterBar() {
           {CATS.map((cat, i) => (
             <button
               key={cat}
-              onClick={() => router.push(i === 0 ? '/archive' : `/archive`)}
+              onClick={() => router.push(i === 0 ? '/archive' : `/archive?category=${encodeURIComponent(cat)}`)}
               className={`px-4 py-2.5 rounded-lg text-sm font-bold whitespace-nowrap font-sans flex items-center gap-1.5 transition-colors ${
                 i === 0
                   ? 'bg-primary text-cream'
