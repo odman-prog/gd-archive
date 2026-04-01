@@ -38,45 +38,86 @@ export default async function LibraryPage() {
         <div className="absolute inset-0 z-0">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/hero-archive.png"
+            src="/f.png"
             alt=""
-            className="w-full h-full object-cover brightness-[0.85] contrast-125"
+            className="w-full h-full object-cover object-center"
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-teal-950/60 via-teal-950/30 to-surface" />
+          <div className="absolute inset-0 bg-gradient-to-r from-teal-950/90 via-teal-950/60 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-surface" />
         </div>
         <div className="relative z-10 max-w-screen-2xl mx-auto px-8 w-full">
           <div className="max-w-2xl">
-            <span className="inline-block px-4 py-1.5 bg-teal-100 text-teal-800 text-xs font-bold tracking-widest uppercase rounded-full mb-6 font-sans">
+            <span className="inline-block px-4 py-1.5 bg-teal-400/20 text-teal-200 border border-teal-400/30 text-xs font-bold tracking-widest uppercase rounded-full mb-6 font-sans backdrop-blur-sm">
               학교 도서관 큐레이션
             </span>
             <h1 className="font-serif text-6xl md:text-8xl text-cream leading-[0.9] tracking-tighter mb-8">
-              도서관<br /><span className="italic">서재</span>
+              도서관<br /><span className="italic text-teal-300">서재</span>
             </h1>
             <div className="h-1 w-24 bg-teal-400 mb-8" />
             <p className="font-sans text-xl md:text-2xl text-cream/80 leading-relaxed max-w-lg">
               광덕고등학교 도서관이 엄선한 소식, 추천 도서, 독서 활동을 만나보세요.
             </p>
+            <div className="flex gap-4 mt-10">
+              <Link
+                href="/archive?category=도서관"
+                className="px-6 py-3 rounded-full bg-teal-400 text-teal-950 font-sans font-bold text-sm tracking-wide hover:bg-teal-300 transition-colors"
+              >
+                전체 글 보기
+              </Link>
+              <Link
+                href="/write"
+                className="px-6 py-3 rounded-full border border-cream/30 text-cream font-sans font-semibold text-sm tracking-wide hover:bg-cream/10 transition-colors"
+              >
+                글 쓰기
+              </Link>
+            </div>
           </div>
         </div>
       </section>
 
       {/* ── 인트로 ───────────────────────────────── */}
       <section className="max-w-screen-2xl mx-auto px-8 py-24">
-        <div className="flex flex-col md:flex-row gap-16 items-start">
-          <div className="md:w-1/3">
-            <h2 className="font-serif text-3xl text-primary leading-tight">
+        <div className="flex flex-col md:flex-row gap-12 items-center">
+          {/* 이미지 */}
+          <div className="md:w-1/2 rounded-2xl overflow-hidden shadow-lg">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/d.png"
+              alt="광덕고 학생들의 도서관 활동"
+              className="w-full h-full object-cover"
+            />
+          </div>
+          {/* 텍스트 */}
+          <div className="md:w-1/2 md:pl-8">
+            <span className="font-sans text-[10px] text-teal-600 font-bold tracking-[0.3em] uppercase mb-4 block">Our Library</span>
+            <h2 className="font-serif text-4xl text-primary leading-tight mb-6">
               도서관의 의미:<br />지식의 보고
             </h2>
-          </div>
-          <div className="md:w-2/3 border-l border-outline-variant/30 pl-12">
-            <p className="font-sans text-lg text-on-surface-variant leading-relaxed mb-6">
+            <div className="h-px w-12 bg-teal-400 mb-6" />
+            <p className="font-sans text-base text-on-surface-variant leading-relaxed mb-5">
               도서관은 단순히 책을 보관하는 공간이 아닙니다. 우리 학교 도서관은 학생들이 스스로 생각하고,
               질문하고, 탐구할 수 있는 지적 성장의 장입니다.
             </p>
-            <p className="font-sans text-lg text-on-surface-variant leading-relaxed">
+            <p className="font-sans text-base text-on-surface-variant leading-relaxed mb-8">
               추천 도서, 독서 행사, 도서관 소식 등 다양한 콘텐츠를 통해 책과 함께하는 즐거움을 나눕니다.
               광덕의 도서관이 여러분의 지적 여정에 든든한 동반자가 되기를 바랍니다.
             </p>
+            <div className="flex gap-6">
+              <div className="text-center">
+                <p className="font-serif text-3xl text-teal-700 font-bold">책</p>
+                <p className="font-sans text-xs text-on-surface-variant mt-1 tracking-widest">BOOKS</p>
+              </div>
+              <div className="w-px bg-outline-variant/30" />
+              <div className="text-center">
+                <p className="font-serif text-3xl text-teal-700 font-bold">소식</p>
+                <p className="font-sans text-xs text-on-surface-variant mt-1 tracking-widest">NEWS</p>
+              </div>
+              <div className="w-px bg-outline-variant/30" />
+              <div className="text-center">
+                <p className="font-serif text-3xl text-teal-700 font-bold">활동</p>
+                <p className="font-sans text-xs text-on-surface-variant mt-1 tracking-widest">ACTIVITY</p>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -97,13 +138,17 @@ export default async function LibraryPage() {
 
           {safePost.length === 0 ? (
             /* 빈 상태 */
-            <div className="text-center py-24">
-              <span className="material-symbols-outlined text-[64px] text-on-surface-variant/30 block mb-4">local_library</span>
-              <p className="font-serif text-2xl text-primary mb-3">아직 등록된 글이 없습니다</p>
-              <p className="font-sans text-sm text-on-surface-variant mb-8">&apos;도서관&apos; 카테고리로 글을 작성하면 이곳에 표시됩니다.</p>
-              <Link href="/write" className="bg-teal-700 px-8 py-3 rounded-full text-cream font-sans font-bold text-sm tracking-widest hover:bg-teal-800 transition-colors">
-                글 작성하기
-              </Link>
+            <div className="relative rounded-3xl overflow-hidden">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/d.png" alt="" className="w-full h-[420px] object-cover object-top brightness-50" />
+              <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-8">
+                <span className="material-symbols-outlined text-[56px] text-teal-300 block mb-4" style={{ fontVariationSettings: "'FILL' 1" }}>local_library</span>
+                <p className="font-serif text-3xl text-cream mb-3">아직 등록된 글이 없습니다</p>
+                <p className="font-sans text-sm text-cream/70 mb-8">&apos;도서관&apos; 카테고리로 글을 작성하면 이곳에 표시됩니다.</p>
+                <Link href="/write" className="bg-teal-400 px-8 py-3 rounded-full text-teal-950 font-sans font-bold text-sm tracking-widest hover:bg-teal-300 transition-colors">
+                  첫 글 작성하기
+                </Link>
+              </div>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
