@@ -6,7 +6,7 @@ import { useDropzone, FileRejection } from 'react-dropzone'
 import { createClient } from '@/lib/supabase/client'
 import { Upload, X, FileText, CheckCircle2, Loader2, Save, Send } from 'lucide-react'
 
-const CATEGORIES = ['기사', '에세이', '인터뷰', '시/수필', '독서감상문', '수행평가', '교사의 서재']
+const CATEGORIES = ['기사', '에세이', '인터뷰', '시/수필', '독서감상문', '수행평가', '교사의 서재', '도서관']
 
 const CATEGORY_DESCRIPTIONS: Record<string, string> = {
   '기사':       '학교생활, 사회 이슈 등을 취재·보도하는 글',
@@ -16,6 +16,7 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
   '독서감상문': '책을 읽고 느낀 점을 정리한 글',
   '수행평가':   '수업 과제로 제출하는 글 (성적 반영 여부 별도 확인)',
   '교사의 서재': '교사가 학생들에게 추천하는 도서 감상 및 사유를 담은 글',
+  '도서관':     '학교 도서관과 관련된 소식, 추천 도서, 독서 활동 등을 담은 글',
 }
 
 const ACCEPT_TYPES = {

@@ -62,6 +62,7 @@ export default async function ContentDetailPage({ params }: { params: { id: stri
     '시/수필':  'from-pink-950 to-pink-800',
     '독서감상문': 'from-amber-950 to-amber-800',
     '수행평가': 'from-orange-950 to-orange-800',
+    '도서관':   'from-teal-950 to-teal-800',
   }
 
   return (

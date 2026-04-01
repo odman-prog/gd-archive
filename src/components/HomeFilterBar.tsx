@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 
-const CATS = ['전체', '기사', '에세이', '인터뷰', '시/수필', '독서감상문', '수행평가', '교사의 서재']
+const CATS = ['전체', '기사', '에세이', '인터뷰', '시/수필', '독서감상문', '수행평가', '교사의 서재', '도서관']
 
 export default function HomeFilterBar() {
   const router = useRouter()
