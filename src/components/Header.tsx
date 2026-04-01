@@ -13,8 +13,8 @@ const navLinks = [
   { href: '/', label: '홈' },
   { href: '/archive', label: '아카이브' },
   { href: '/teacher', label: '교사의 서재' },
-  { href: '/library', label: '도서관' },
   { href: '/magazine', label: '교지' },
+  { href: '/library', label: '도서관' },
   { href: '/write', label: '글 쓰기' },
 ]
 
