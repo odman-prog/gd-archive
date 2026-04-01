@@ -38,7 +38,7 @@ export default async function LibraryPage() {
         <div className="absolute inset-0 z-0">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/f.png"
+            src="/jiw.png"
             alt=""
             className="w-full h-full object-cover object-center"
           />
@@ -82,8 +82,8 @@ export default async function LibraryPage() {
           <div className="md:w-1/2 rounded-2xl overflow-hidden shadow-lg">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/d.png"
-              alt="광덕고 학생들의 도서관 활동"
+              src="/f.png"
+              alt="광덕고 도서관 추천 도서"
               className="w-full h-full object-cover"
             />
           </div>
@@ -140,7 +140,7 @@ export default async function LibraryPage() {
             /* 빈 상태 */
             <div className="relative rounded-3xl overflow-hidden">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/d.png" alt="" className="w-full h-[420px] object-cover object-top brightness-50" />
+              <img src="/jiw.png" alt="" className="w-full h-[420px] object-cover object-center brightness-50" />
               <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-8">
                 <span className="material-symbols-outlined text-[56px] text-teal-300 block mb-4" style={{ fontVariationSettings: "'FILL' 1" }}>local_library</span>
                 <p className="font-serif text-3xl text-cream mb-3">아직 등록된 글이 없습니다</p>
