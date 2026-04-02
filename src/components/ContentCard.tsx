@@ -22,7 +22,10 @@ export const CATEGORY_COLORS: Record<string, string> = {
   '시/수필': 'bg-pink-100 text-pink-700',
   '독서감상문': 'bg-amber-100 text-amber-700',
   '수행평가': 'bg-orange-100 text-orange-700',
+  '교사의 서재': 'bg-yellow-100 text-yellow-700',
   '도서관': 'bg-teal-100 text-teal-700',
+  '광덕 위클리': 'bg-sky-100 text-sky-700',
+  '입시 웹툰': 'bg-purple-100 text-purple-700',
   '기타': 'bg-gray-100 text-gray-600',
 }
 
@@ -33,7 +36,10 @@ export const CATEGORY_GRADIENTS: Record<string, string> = {
   '시/수필': 'from-[#2a1b22] to-pink-900',
   '독서감상문': 'from-[#2a2115] to-amber-900',
   '수행평가': 'from-[#2c1d11] to-orange-900',
+  '교사의 서재': 'from-[#2a2100] to-yellow-900',
   '도서관': 'from-[#0d2020] to-teal-900',
+  '광덕 위클리': 'from-[#0a1f2e] to-sky-900',
+  '입시 웹툰': 'from-[#1a0a2e] to-purple-900',
   '기타': 'from-zinc-900 to-zinc-800',
 }
 

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Search, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react'
 import ContentCard, { type Content } from '@/components/ContentCard'
 
-const CATEGORIES = ['전체', '기사', '에세이', '인터뷰', '시/수필', '독서감상문', '수행평가', '교사의 서재', '도서관']
+const CATEGORIES = ['전체', '기사', '에세이', '인터뷰', '시/수필', '독서감상문', '수행평가', '교사의 서재', '도서관', '광덕 위클리', '입시 웹툰']
 const SORTS = [
   { label: '최신순', value: 'created_at' },
   { label: '인기순', value: 'like_count' },
