@@ -4,7 +4,7 @@ import { useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useDropzone, FileRejection } from 'react-dropzone'
 import { createClient } from '@/lib/supabase/client'
-import { Upload, X, FileText, CheckCircle2, Loader2, Save, Send } from 'lucide-react'
+import { Upload, X, FileText, CheckCircle2, Loader2, Save, Send, Image } from 'lucide-react'
 
 const CATEGORIES = ['기사', '에세이', '인터뷰', '시/수필', '독서감상문', '수행평가', '교사의 서재', '도서관', '입시 웹툰']
 
@@ -26,6 +26,13 @@ const ACCEPT_TYPES = {
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
 }
 
+const ACCEPT_IMAGE_TYPES = {
+  'image/jpeg': ['.jpg', '.jpeg'],
+  'image/png': ['.png'],
+  'image/gif': ['.gif'],
+  'image/webp': ['.webp'],
+}
+
 const MAX_SIZE = 20 * 1024 * 1024
 
 type UploadFile = {
@@ -33,6 +40,7 @@ type UploadFile = {
   state: 'pending' | 'uploading' | 'done' | 'error'
   progress: number
   storagePath?: string
+  previewUrl?: string
 }
 
 type Status = 'submitted' | 'draft'
@@ -51,6 +59,8 @@ export default function WriteForm({ userId }: { userId: string }) {
   const [done, setDone] = useState<Status | null>(null)
   const [error, setError] = useState('')
 
+  const isWebtoon = category === '입시 웹툰'
+
   const onDrop = useCallback((accepted: File[], rejected: FileRejection[]) => {
     if (rejected.length > 0) {
       const msg = rejected[0].errors[0]?.message ?? '파일 오류'
@@ -60,19 +70,28 @@ export default function WriteForm({ userId }: { userId: string }) {
     setError('')
     setFiles((prev) => [
       ...prev,
-      ...accepted.map((f) => ({ file: f, state: 'pending' as const, progress: 0 })),
+      ...accepted.map((f) => ({
+        file: f,
+        state: 'pending' as const,
+        progress: 0,
+        previewUrl: f.type.startsWith('image/') ? URL.createObjectURL(f) : undefined,
+      })),
     ])
   }, [])
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
-    accept: ACCEPT_TYPES,
+    accept: isWebtoon ? ACCEPT_IMAGE_TYPES : ACCEPT_TYPES,
     maxSize: MAX_SIZE,
     multiple: true,
   })
 
   function removeFile(idx: number) {
-    setFiles((prev) => prev.filter((_, i) => i !== idx))
+    setFiles((prev) => {
+      const item = prev[idx]
+      if (item.previewUrl) URL.revokeObjectURL(item.previewUrl)
+      return prev.filter((_, i) => i !== idx)
+    })
   }
 
   function formatSize(bytes: number) {
@@ -93,7 +112,8 @@ export default function WriteForm({ userId }: { userId: string }) {
       setFiles([...results])
 
       const ext = item.file.name.split('.').pop()
-      const path = `${userId}/${Date.now()}_${i}.${ext}`
+      const folder = isWebtoon ? 'webtoon' : 'docs'
+      const path = `${folder}/${userId}/${Date.now()}_${i}.${ext}`
 
       const { error } = await supabase.storage
         .from('uploads')
@@ -115,9 +135,15 @@ export default function WriteForm({ userId }: { userId: string }) {
     setError('')
     if (!title.trim()) { setError('제목을 입력해주세요.'); return }
     if (!category) { setError('카테고리를 선택해주세요.'); return }
-    if (status === 'submitted' && !body.trim() && files.length === 0) {
-      setError('본문을 작성하거나 파일을 첨부해주세요.')
-      return
+    if (status === 'submitted') {
+      if (isWebtoon && files.length === 0) {
+        setError('웹툰 이미지를 1장 이상 첨부해주세요.')
+        return
+      }
+      if (!isWebtoon && !body.trim() && files.length === 0) {
+        setError('본문을 작성하거나 파일을 첨부해주세요.')
+        return
+      }
     }
 
     setSubmitting(status)
@@ -128,7 +154,24 @@ export default function WriteForm({ userId }: { userId: string }) {
       if (failedFile) throw new Error(`파일 업로드 실패: ${failedFile.file.name}`)
 
       const tagArray = parseTags(tags)
-      const firstFile = uploadedFiles.find((f) => f.storagePath)
+
+      let fileUrlValue: string | null = null
+      let fileNameValue: string | null = null
+
+      if (isWebtoon) {
+        const imageUrls = uploadedFiles
+          .filter((f) => f.storagePath)
+          .map((f) => supabase.storage.from('uploads').getPublicUrl(f.storagePath!).data.publicUrl)
+        fileUrlValue = imageUrls.length > 0 ? JSON.stringify(imageUrls) : null
+        fileNameValue = null
+      } else {
+        const firstFile = uploadedFiles.find((f) => f.storagePath)
+        fileUrlValue = firstFile?.storagePath
+          ? supabase.storage.from('uploads').getPublicUrl(firstFile.storagePath).data.publicUrl
+          : null
+        fileNameValue = firstFile?.file.name ?? null
+      }
+
       const { data: content, error: contentError } = await supabase
         .from('contents')
         .insert({
@@ -140,8 +183,8 @@ export default function WriteForm({ userId }: { userId: string }) {
           tags: tagArray.length > 0 ? tagArray : null,
           status,
           cover_image_url: null,
-          file_url: firstFile?.storagePath ? supabase.storage.from('uploads').getPublicUrl(firstFile.storagePath).data.publicUrl : null,
-          file_name: firstFile?.file.name ?? null,
+          file_url: fileUrlValue,
+          file_name: fileNameValue,
         })
         .select('id')
         .single()
@@ -225,7 +268,7 @@ export default function WriteForm({ userId }: { userId: string }) {
             <button
               key={c}
               type="button"
-              onClick={() => setCategory(c)}
+              onClick={() => { setCategory(c); setFiles([]) }}
               className={`px-4 py-2 rounded-full text-xs font-sans font-semibold tracking-wide transition-all ${
                 category === c
                   ? 'bg-primary text-cream shadow-sm'
@@ -241,20 +284,22 @@ export default function WriteForm({ userId }: { userId: string }) {
         )}
       </div>
 
-      {/* 본문 */}
-      <div className="border-b border-primary/10 pb-1">
-        <div className="flex items-center justify-between mb-3">
-          <label className="font-sans text-[11px] font-bold uppercase tracking-[0.2em] text-primary/40">본문</label>
-          <span className="font-sans text-[10px] text-primary/20">{body.length.toLocaleString()}자</span>
+      {/* 본문 — 웹툰이면 숨김 */}
+      {!isWebtoon && (
+        <div className="border-b border-primary/10 pb-1">
+          <div className="flex items-center justify-between mb-3">
+            <label className="font-sans text-[11px] font-bold uppercase tracking-[0.2em] text-primary/40">본문</label>
+            <span className="font-sans text-[10px] text-primary/20">{body.length.toLocaleString()}자</span>
+          </div>
+          <textarea
+            placeholder="글을 직접 작성하세요. 파일 첨부 없이도 제출할 수 있습니다."
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            rows={14}
+            className="w-full bg-transparent font-sans text-sm text-primary placeholder:text-primary/20 focus:outline-none resize-none leading-relaxed"
+          />
         </div>
-        <textarea
-          placeholder="글을 직접 작성하세요. 파일 첨부 없이도 제출할 수 있습니다."
-          value={body}
-          onChange={(e) => setBody(e.target.value)}
-          rows={14}
-          className="w-full bg-transparent font-sans text-sm text-primary placeholder:text-primary/20 focus:outline-none resize-none leading-relaxed"
-        />
-      </div>
+      )}
 
       {/* 내용 요약 */}
       <div className="border-b border-primary/10 pb-1">
@@ -295,11 +340,16 @@ export default function WriteForm({ userId }: { userId: string }) {
         )}
       </div>
 
-      {/* 파일 첨부 */}
+      {/* 파일 첨부 / 웹툰 이미지 첨부 */}
       <div>
         <div className="flex items-center justify-between mb-3">
-          <label className="font-sans text-[11px] font-bold uppercase tracking-[0.2em] text-primary/40">파일 첨부</label>
-          <span className="font-sans text-[10px] text-primary/25">선택 · 최대 20MB</span>
+          <label className="font-sans text-[11px] font-bold uppercase tracking-[0.2em] text-primary/40">
+            {isWebtoon ? '웹툰 이미지' : '파일 첨부'}
+            {isWebtoon && <span className="text-secondary/70 ml-1">*</span>}
+          </label>
+          <span className="font-sans text-[10px] text-primary/25">
+            {isWebtoon ? '순서대로 업로드 · 최대 20MB' : '선택 · 최대 20MB'}
+          </span>
         </div>
         <div
           {...getRootProps()}
@@ -310,40 +360,72 @@ export default function WriteForm({ userId }: { userId: string }) {
           }`}
         >
           <input {...getInputProps()} />
-          <Upload size={20} className="mx-auto text-primary/20 mb-2.5" />
+          {isWebtoon
+            ? <Image size={20} className="mx-auto text-primary/20 mb-2.5" />
+            : <Upload size={20} className="mx-auto text-primary/20 mb-2.5" />
+          }
           <p className="font-sans text-xs text-primary/40">
             {isDragActive ? '파일을 놓으세요' : '드래그 또는 클릭하여 파일 추가'}
           </p>
-          <p className="font-sans text-[10px] text-primary/20 mt-1">PDF · HWPX · DOCX</p>
+          <p className="font-sans text-[10px] text-primary/20 mt-1">
+            {isWebtoon ? 'JPG · PNG · GIF · WEBP' : 'PDF · HWPX · DOCX'}
+          </p>
         </div>
 
         {files.length > 0 && (
-          <div className="mt-3 flex flex-col gap-2">
+          <div className={`mt-3 ${isWebtoon ? 'flex flex-col gap-3' : 'flex flex-col gap-2'}`}>
             {files.map((item, idx) => (
-              <div key={idx} className="flex items-center gap-3 px-4 py-3 bg-primary/3 rounded-xl border border-primary/8">
-                <FileText size={14} className="shrink-0 text-primary/30" />
-                <div className="flex-1 min-w-0">
-                  <p className="font-sans text-xs text-primary truncate">{item.file.name}</p>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="font-sans text-[10px] text-primary/30">{formatSize(item.file.size)}</span>
-                    {item.state === 'uploading' && (
-                      <>
-                        <div className="flex-1 h-1 bg-primary/10 rounded-full overflow-hidden">
-                          <div className="h-full bg-secondary rounded-full transition-all duration-300" style={{ width: `${item.progress}%` }} />
-                        </div>
-                        <span className="font-sans text-[10px] text-primary/30">업로드 중</span>
-                      </>
+              isWebtoon ? (
+                <div key={idx} className="relative rounded-xl overflow-hidden border border-primary/8 bg-primary/3">
+                  {item.previewUrl && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={item.previewUrl}
+                      alt={item.file.name}
+                      className="w-full object-contain max-h-[600px]"
+                    />
+                  )}
+                  <div className="flex items-center justify-between px-3 py-2 bg-primary/5">
+                    <div className="flex items-center gap-2">
+                      <span className="font-sans text-[10px] text-primary/50 font-bold">{idx + 1}번째</span>
+                      <span className="font-sans text-[10px] text-primary/40 truncate max-w-[160px]">{item.file.name}</span>
+                      {item.state === 'uploading' && <span className="font-sans text-[10px] text-primary/30">업로드 중</span>}
+                      {item.state === 'done' && <span className="font-sans text-[10px] text-emerald-500 font-semibold">완료</span>}
+                      {item.state === 'error' && <span className="font-sans text-[10px] text-rose-500 font-semibold">실패</span>}
+                    </div>
+                    {item.state !== 'uploading' && (
+                      <button type="button" onClick={() => removeFile(idx)} className="shrink-0 text-primary/20 hover:text-rose-400 transition-colors">
+                        <X size={14} />
+                      </button>
                     )}
-                    {item.state === 'done' && <span className="font-sans text-[10px] text-emerald-500 font-semibold">완료</span>}
-                    {item.state === 'error' && <span className="font-sans text-[10px] text-rose-500 font-semibold">실패</span>}
                   </div>
                 </div>
-                {item.state !== 'uploading' && (
-                  <button type="button" onClick={() => removeFile(idx)} className="shrink-0 text-primary/20 hover:text-rose-400 transition-colors">
-                    <X size={14} />
-                  </button>
-                )}
-              </div>
+              ) : (
+                <div key={idx} className="flex items-center gap-3 px-4 py-3 bg-primary/3 rounded-xl border border-primary/8">
+                  <FileText size={14} className="shrink-0 text-primary/30" />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-sans text-xs text-primary truncate">{item.file.name}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="font-sans text-[10px] text-primary/30">{formatSize(item.file.size)}</span>
+                      {item.state === 'uploading' && (
+                        <>
+                          <div className="flex-1 h-1 bg-primary/10 rounded-full overflow-hidden">
+                            <div className="h-full bg-secondary rounded-full transition-all duration-300" style={{ width: `${item.progress}%` }} />
+                          </div>
+                          <span className="font-sans text-[10px] text-primary/30">업로드 중</span>
+                        </>
+                      )}
+                      {item.state === 'done' && <span className="font-sans text-[10px] text-emerald-500 font-semibold">완료</span>}
+                      {item.state === 'error' && <span className="font-sans text-[10px] text-rose-500 font-semibold">실패</span>}
+                    </div>
+                  </div>
+                  {item.state !== 'uploading' && (
+                    <button type="button" onClick={() => removeFile(idx)} className="shrink-0 text-primary/20 hover:text-rose-400 transition-colors">
+                      <X size={14} />
+                    </button>
+                  )}
+                </div>
+              )
             ))}
           </div>
         )}

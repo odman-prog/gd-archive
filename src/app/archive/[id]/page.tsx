@@ -1,6 +1,17 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Download, FileText, Eye } from 'lucide-react'
+
+function parseWebtoonImages(fileUrl: string | null): string[] | null {
+  if (!fileUrl) return null
+  try {
+    const parsed = JSON.parse(fileUrl)
+    if (Array.isArray(parsed) && parsed.length > 0) return parsed as string[]
+  } catch {
+    // not JSON
+  }
+  return null
+}
 import { format } from 'date-fns'
 import { ko } from 'date-fns/locale'
 import { createClient } from '@/lib/supabase/server'
@@ -53,6 +64,7 @@ export default async function ContentDetailPage({ params }: { params: { id: stri
   })
 
   const tags: string[] = Array.isArray(content.tags) ? content.tags : []
+  const webtoonImages = parseWebtoonImages(content.file_url)
   const categoryColor = CATEGORY_COLORS[content.category ?? ''] ?? CATEGORY_COLORS['기타']
 
   const CATEGORY_GRADIENTS: Record<string, string> = {
@@ -121,25 +133,41 @@ export default async function ContentDetailPage({ params }: { params: { id: stri
           )}
         </div>
 
-        {/* ── 본문 ───────────────────────────────────── */}
-        <section
-          className="font-serif text-xl md:text-2xl leading-relaxed text-on-surface space-y-10 mb-16"
-          style={{ fontFamily: 'Newsreader, Georgia, serif' }}
-        >
-          {(content.body ?? content.excerpt ?? '본문이 없습니다.')
-            .split(/\n{2,}/)
-            .map((para: string, i: number) => (
-              <p
-                key={i}
-                className={i === 0 ? 'first-letter:text-7xl first-letter:font-bold first-letter:text-primary first-letter:mr-3 first-letter:float-left first-letter:leading-[0.85]' : ''}
-              >
-                {para.trim()}
-              </p>
-            ))}
-        </section>
+        {/* ── 웹툰 뷰어 또는 본문 ───────────────────── */}
+        {webtoonImages ? (
+          <section className="mb-16">
+            <div className="flex flex-col items-center gap-0">
+              {webtoonImages.map((url, i) => (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  key={i}
+                  src={url}
+                  alt={`${content.title} ${i + 1}화`}
+                  className="w-full max-w-2xl object-contain block"
+                />
+              ))}
+            </div>
+          </section>
+        ) : (
+          <section
+            className="font-serif text-xl md:text-2xl leading-relaxed text-on-surface space-y-10 mb-16"
+            style={{ fontFamily: 'Newsreader, Georgia, serif' }}
+          >
+            {(content.body ?? content.excerpt ?? '본문이 없습니다.')
+              .split(/\n{2,}/)
+              .map((para: string, i: number) => (
+                <p
+                  key={i}
+                  className={i === 0 ? 'first-letter:text-7xl first-letter:font-bold first-letter:text-primary first-letter:mr-3 first-letter:float-left first-letter:leading-[0.85]' : ''}
+                >
+                  {para.trim()}
+                </p>
+              ))}
+          </section>
+        )}
 
-        {/* ── 첨부파일 ───────────────────────────────── */}
-        {content.file_url && content.file_name && (
+        {/* ── 첨부파일 (웹툰이 아닐 때만) ───────────── */}
+        {!webtoonImages && content.file_url && content.file_name && (
           <div className="mb-12 py-10 border-y border-outline-variant/20">
             <h3 className="text-[10px] font-bold uppercase tracking-widest text-secondary mb-3 flex items-center gap-2 font-sans">
               <FileText size={12} />
