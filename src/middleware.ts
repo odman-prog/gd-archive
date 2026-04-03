@@ -23,10 +23,12 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  const { data: { user } } = await supabase.auth.getUser()
+  // getSession()은 쿠키에서 로컬로 JWT를 읽으므로 Supabase 네트워크 요청이 없음
+  // (실제 권한 검증은 각 route handler에서 getUser()로 수행)
+  const { data: { session } } = await supabase.auth.getSession()
 
   // 미인증 사용자를 로그인 페이지로 리디렉트
-  if (!user) {
+  if (!session) {
     const loginUrl = new URL('/auth', request.url)
     loginUrl.searchParams.set('redirectTo', request.nextUrl.pathname)
     return NextResponse.redirect(loginUrl)

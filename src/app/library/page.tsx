@@ -1,9 +1,16 @@
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
+import { createClient } from '@supabase/supabase-js'
 import { format } from 'date-fns'
 import { ko } from 'date-fns/locale'
 
-export const dynamic = 'force-dynamic'
+function getAnonClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  )
+}
+
+export const revalidate = 60 // 60초 ISR 캐싱 (공개 데이터만 사용)
 
 type Post = {
   id: string
@@ -15,7 +22,7 @@ type Post = {
 }
 
 export default async function LibraryPage() {
-  const supabase = createClient()
+  const supabase = getAnonClient()
 
   const { data: posts } = await supabase
     .from('contents')

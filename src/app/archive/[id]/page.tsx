@@ -1,4 +1,6 @@
 import { notFound } from 'next/navigation'
+import { unstable_cache } from 'next/cache'
+import { createClient as createPublicClient } from '@supabase/supabase-js'
 import Link from 'next/link'
 import { ArrowLeft, Download, FileText, Eye } from 'lucide-react'
 
@@ -19,17 +21,55 @@ import { CATEGORY_COLORS } from '@/components/ContentCard'
 import LikeButton from './LikeButton'
 import ViewTracker from './ViewTracker'
 
+// 퍼블릭 클라이언트 (anon key) — 캐싱용
+function getAnonClient() {
+  return createPublicClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  )
+}
+
+// 본문 + 관련글은 1분간 캐시 (유저별 다를 필요 없음)
+const fetchContent = unstable_cache(
+  async (id: string) => {
+    const supabase = getAnonClient()
+    const { data } = await supabase
+      .from('contents')
+      .select('id, title, excerpt, body, category, featured, view_count, like_count, created_at, author_id, file_url, file_name, cover_image_url, tags, profiles!author_id(name, grade)')
+      .eq('id', id)
+      .eq('status', 'published')
+      .single()
+    return data
+  },
+  ['content-detail'],
+  { revalidate: 60, tags: ['content-detail'] }
+)
+
+const fetchRelated = unstable_cache(
+  async (id: string, category: string) => {
+    const supabase = getAnonClient()
+    const { data } = await supabase
+      .from('contents')
+      .select('id, title, category, cover_image_url, created_at, author_id, profiles!author_id(name)')
+      .eq('status', 'published')
+      .eq('category', category)
+      .neq('id', id)
+      .order('created_at', { ascending: false })
+      .limit(2)
+    return data ?? []
+  },
+  ['content-related'],
+  { revalidate: 60, tags: ['content-detail'] }
+)
+
 export default async function ContentDetailPage({ params }: { params: { id: string } }) {
   const supabase = createClient()
 
-  const { data: { user } } = await supabase.auth.getUser()
-
-  const { data: content } = await supabase
-    .from('contents')
-    .select('id, title, excerpt, body, category, featured, view_count, like_count, created_at, author_id, file_url, file_name, cover_image_url, tags, profiles!author_id(name, grade)')
-    .eq('id', params.id)
-    .eq('status', 'published')
-    .single()
+  // 본문(캐시됨) + 유저 세션(캐시 불가) 병렬 조회
+  const [content, { data: { user } }] = await Promise.all([
+    fetchContent(params.id),
+    supabase.auth.getUser(),
+  ])
 
   if (!content) notFound()
 
@@ -38,27 +78,18 @@ export default async function ContentDetailPage({ params }: { params: { id: stri
   const authorLabel = authorProfile?.name ?? '알 수 없음'
   const authorGrade = authorProfile?.grade ? `${authorProfile.grade}학년` : null
 
-  // 좋아요 여부 + 관련 글 병렬 조회
-  const [likeResult, relatedResult] = await Promise.all([
+  // 좋아요 여부(유저별) + 관련글(캐시됨) 병렬 조회
+  const [likeResult, relatedRaw] = await Promise.all([
     user
       ? supabase.from('likes').select('id').eq('content_id', params.id).eq('user_id', user.id).maybeSingle()
       : Promise.resolve({ data: null }),
-    content.category
-      ? supabase
-          .from('contents')
-          .select('id, title, category, cover_image_url, created_at, author_id, profiles!author_id(name)')
-          .eq('status', 'published')
-          .eq('category', content.category)
-          .neq('id', content.id)
-          .order('created_at', { ascending: false })
-          .limit(2)
-      : Promise.resolve({ data: [] }),
+    content.category ? fetchRelated(params.id, content.category) : Promise.resolve([]),
   ])
+  const relatedResult = { data: relatedRaw }
 
   const isLiked = !!(likeResult as { data: unknown }).data
 
-  const relatedRaw = (relatedResult as { data: unknown[] | null }).data ?? []
-  const relatedItems = relatedRaw.map((r) => {
+  const relatedItems = (relatedResult.data as unknown[] ?? []).map((r) => {
     const item = r as { id: string; title: string; category: string | null; cover_image_url: string | null; created_at: string; author_id: string; profiles: { name: string } | null }
     return { ...item, authorName: item.profiles?.name ?? '알 수 없음' }
   })
