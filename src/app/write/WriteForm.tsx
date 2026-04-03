@@ -33,6 +33,11 @@ const ACCEPT_IMAGE_TYPES = {
   'image/webp': ['.webp'],
 }
 
+const ACCEPT_DOC_AND_IMAGE_TYPES = {
+  ...ACCEPT_TYPES,
+  ...ACCEPT_IMAGE_TYPES,
+}
+
 const MAX_SIZE = 20 * 1024 * 1024
 
 type UploadFile = {
@@ -81,7 +86,7 @@ export default function WriteForm({ userId }: { userId: string }) {
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
-    accept: isWebtoon ? ACCEPT_IMAGE_TYPES : ACCEPT_TYPES,
+    accept: isWebtoon ? ACCEPT_IMAGE_TYPES : ACCEPT_DOC_AND_IMAGE_TYPES,
     maxSize: MAX_SIZE,
     multiple: true,
   })
@@ -112,7 +117,8 @@ export default function WriteForm({ userId }: { userId: string }) {
       setFiles([...results])
 
       const ext = item.file.name.split('.').pop()
-      const folder = isWebtoon ? 'webtoon' : 'docs'
+      const isImage = item.file.type.startsWith('image/')
+      const folder = isWebtoon ? 'webtoon' : isImage ? 'images' : 'docs'
       const path = `${folder}/${userId}/${Date.now()}_${i}.${ext}`
 
       const { error } = await supabase.storage
@@ -165,11 +171,21 @@ export default function WriteForm({ userId }: { userId: string }) {
         fileUrlValue = imageUrls.length > 0 ? JSON.stringify(imageUrls) : null
         fileNameValue = null
       } else {
-        const firstFile = uploadedFiles.find((f) => f.storagePath)
-        fileUrlValue = firstFile?.storagePath
-          ? supabase.storage.from('uploads').getPublicUrl(firstFile.storagePath).data.publicUrl
-          : null
-        fileNameValue = firstFile?.file.name ?? null
+        const imageFiles = uploadedFiles.filter((f) => f.storagePath && f.file.type.startsWith('image/'))
+        const docFiles = uploadedFiles.filter((f) => f.storagePath && !f.file.type.startsWith('image/'))
+        if (imageFiles.length > 0) {
+          const imageUrls = imageFiles.map((f) =>
+            supabase.storage.from('uploads').getPublicUrl(f.storagePath!).data.publicUrl
+          )
+          fileUrlValue = JSON.stringify(imageUrls)
+          fileNameValue = docFiles.length > 0 ? docFiles[0].file.name : null
+        } else {
+          const firstDoc = docFiles[0]
+          fileUrlValue = firstDoc
+            ? supabase.storage.from('uploads').getPublicUrl(firstDoc.storagePath!).data.publicUrl
+            : null
+          fileNameValue = firstDoc?.file.name ?? null
+        }
       }
 
       const { data: content, error: contentError } = await supabase
@@ -368,14 +384,14 @@ export default function WriteForm({ userId }: { userId: string }) {
             {isDragActive ? '파일을 놓으세요' : '드래그 또는 클릭하여 파일 추가'}
           </p>
           <p className="font-sans text-[10px] text-primary/20 mt-1">
-            {isWebtoon ? 'JPG · PNG · GIF · WEBP' : 'PDF · HWPX · DOCX'}
+            {isWebtoon ? 'JPG · PNG · GIF · WEBP' : 'PDF · HWPX · DOCX · JPG · PNG · GIF · WEBP'}
           </p>
         </div>
 
         {files.length > 0 && (
-          <div className={`mt-3 ${isWebtoon ? 'flex flex-col gap-3' : 'flex flex-col gap-2'}`}>
+          <div className="mt-3 flex flex-col gap-3">
             {files.map((item, idx) => (
-              isWebtoon ? (
+              isWebtoon || item.file.type.startsWith('image/') ? (
                 <div key={idx} className="relative rounded-xl overflow-hidden border border-primary/8 bg-primary/3">
                   {item.previewUrl && (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -387,8 +403,9 @@ export default function WriteForm({ userId }: { userId: string }) {
                   )}
                   <div className="flex items-center justify-between px-3 py-2 bg-primary/5">
                     <div className="flex items-center gap-2">
-                      <span className="font-sans text-[10px] text-primary/50 font-bold">{idx + 1}번째</span>
+                      {isWebtoon && <span className="font-sans text-[10px] text-primary/50 font-bold">{idx + 1}번째</span>}
                       <span className="font-sans text-[10px] text-primary/40 truncate max-w-[160px]">{item.file.name}</span>
+                      <span className="font-sans text-[10px] text-primary/25">{formatSize(item.file.size)}</span>
                       {item.state === 'uploading' && <span className="font-sans text-[10px] text-primary/30">업로드 중</span>}
                       {item.state === 'done' && <span className="font-sans text-[10px] text-emerald-500 font-semibold">완료</span>}
                       {item.state === 'error' && <span className="font-sans text-[10px] text-rose-500 font-semibold">실패</span>}
