@@ -39,26 +39,15 @@ export async function POST(req: NextRequest) {
     const supabase = getAdminClient()
     const email = `${loginId}@gd-archive.internal`
 
-    // 중복 아이디 체크
-    const { data: existing } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('student_id', loginId)
-      .maybeSingle()
+    // 중복 아이디 + 학번 체크를 병렬 처리
+    const [{ data: existing }, { data: dupStudent }] = await Promise.all([
+      supabase.from('profiles').select('id').eq('student_id', loginId).maybeSingle(),
+      supabase.from('profiles').select('id').eq('grade', Number(grade)).eq('class', Number(classNum)).eq('number', Number(number)).maybeSingle(),
+    ])
 
     if (existing) {
       return NextResponse.json({ error: '이미 사용 중인 아이디입니다.' }, { status: 409 })
     }
-
-    // 학년·반·번호 중복 체크 (동일 학생 정보로 중복 가입 방지)
-    const { data: dupStudent } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('grade', Number(grade))
-      .eq('class', Number(classNum))
-      .eq('number', Number(number))
-      .maybeSingle()
-
     if (dupStudent) {
       return NextResponse.json({ error: '이미 해당 학번으로 가입된 계정이 있습니다.' }, { status: 409 })
     }

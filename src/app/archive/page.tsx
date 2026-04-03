@@ -68,7 +68,7 @@ const fetchArchiveData = unstable_cache(
     return { contents, total: contentsResult.count ?? 0, allTags }
   },
   ['archive-data'],
-  { revalidate: 30, tags: ['archive'] }
+  { revalidate: 60, tags: ['archive'] }
 )
 
 export default async function ArchivePage({

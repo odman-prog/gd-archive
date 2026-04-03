@@ -11,6 +11,7 @@ export default function ViewTracker({ contentId }: { contentId: string }) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id: contentId }),
+      keepalive: true,
     })
   }, [contentId])
 

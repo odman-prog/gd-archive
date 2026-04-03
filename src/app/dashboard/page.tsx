@@ -28,26 +28,28 @@ export default async function DashboardPage() {
     )
   }
 
-  // 접수 대기 (submitted)
-  const { data: submittedRaw } = await supabase
-    .from('contents')
-    .select('id, title, excerpt, body, category, status, created_at, author_id, file_url, file_name, reviewer_comment, resubmit_count')
-    .eq('status', 'submitted')
-    .order('created_at', { ascending: true })
-
-  // 발행 완료 (published)
-  const { data: publishedRaw } = await supabase
-    .from('contents')
-    .select('id, title, excerpt, body, category, status, created_at, author_id, file_url, file_name, reviewer_comment, resubmit_count, featured, cover_image_url')
-    .eq('status', 'published')
-    .order('created_at', { ascending: false })
-
-  // 처리 완료 (revision + rejected)
-  const { data: doneRaw } = await supabase
-    .from('contents')
-    .select('id, title, excerpt, body, category, status, created_at, author_id, file_url, file_name, reviewer_comment, resubmit_count')
-    .in('status', ['revision', 'rejected'])
-    .order('created_at', { ascending: false })
+  // 3개 목록 병렬 조회
+  const [
+    { data: submittedRaw },
+    { data: publishedRaw },
+    { data: doneRaw },
+  ] = await Promise.all([
+    supabase
+      .from('contents')
+      .select('id, title, excerpt, body, category, status, created_at, author_id, file_url, file_name, reviewer_comment, resubmit_count')
+      .eq('status', 'submitted')
+      .order('created_at', { ascending: true }),
+    supabase
+      .from('contents')
+      .select('id, title, excerpt, body, category, status, created_at, author_id, file_url, file_name, reviewer_comment, resubmit_count, featured, cover_image_url')
+      .eq('status', 'published')
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('contents')
+      .select('id, title, excerpt, body, category, status, created_at, author_id, file_url, file_name, reviewer_comment, resubmit_count')
+      .in('status', ['revision', 'rejected'])
+      .order('created_at', { ascending: false }),
+  ])
 
   // 저자 프로필 별도 조회
   const allIds = [

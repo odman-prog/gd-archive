@@ -1,10 +1,27 @@
 import type { Metadata } from 'next'
 import './globals.css'
+import { unstable_cache } from 'next/cache'
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/server'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import BottomNav from '@/components/BottomNav'
 import InstallBanner from '@/components/InstallBanner'
+
+// 사용자 역할을 60초간 캐시 → 매 페이지 로드마다 DB 호출 방지
+const getCachedRole = unstable_cache(
+  async (userId: string) => {
+    const admin = createSupabaseClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      { auth: { autoRefreshToken: false, persistSession: false } }
+    )
+    const { data } = await admin.from('profiles').select('role').eq('id', userId).single()
+    return data?.role ?? null
+  },
+  ['user-role'],
+  { revalidate: 60, tags: ['user-role'] }
+)
 
 export const metadata: Metadata = {
   title: '광덕아카이브',
@@ -31,12 +48,7 @@ export default async function RootLayout({
 
   let initialRole: string | null = null
   if (session?.user) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', session.user.id)
-      .single()
-    initialRole = profile?.role ?? null
+    initialRole = await getCachedRole(session.user.id)
   }
 
   const initialUser = session?.user
