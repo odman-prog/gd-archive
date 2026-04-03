@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
   const sql = `
     ALTER TABLE contents DROP CONSTRAINT IF EXISTS contents_category_check;
     ALTER TABLE contents ADD CONSTRAINT contents_category_check
-      CHECK (category IN ('기사', '에세이', '인터뷰', '시/수필', '독서감상문', '수행평가', '교사의 서재', '도서관'));
+      CHECK (category IN ('기사', '에세이', '인터뷰', '시/수필', '독서감상문', '수행평가', '교사의 서재', '도서관', '입시 웹툰'));
   `
 
   const res = await fetch(`https://api.supabase.com/v1/projects/${projectRef}/database/query`, {
