@@ -1,60 +1,66 @@
 import Link from 'next/link'
 import { format } from 'date-fns'
 import { ko } from 'date-fns/locale'
-import { createClient } from '@/lib/supabase/server'
+import { createClient } from '@supabase/supabase-js'
+import { unstable_cache } from 'next/cache'
 import ContentCard from '@/components/ContentCard'
 
-export const revalidate = 60 // 60초 ISR 캐싱
+export const revalidate = 60 // 60초 ISR — anon 클라이언트 사용 시 실제로 동작함
 
-async function getStats(supabase: ReturnType<typeof createClient>) {
-  const [contentsCount, authorData] = await Promise.all([
-    supabase.from('contents').select('id', { count: 'exact', head: true }).eq('status', 'published'),
-    supabase.from('contents').select('author_id').eq('status', 'published'),
-  ])
-  const studentCount = new Set(authorData.data?.map((r) => r.author_id)).size
-  return {
-    contentCount: contentsCount.count ?? 0,
-    studentCount,
-  }
+function getAnonClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  )
 }
 
-async function getContentList(supabase: ReturnType<typeof createClient>, featured: boolean, limit: number) {
-  let q = supabase
-    .from('contents')
-    .select('id, title, excerpt, category, view_count, like_count, created_at, author_id, cover_image_url')
-    .eq('status', 'published')
-    .order('created_at', { ascending: false })
-    .limit(limit)
+const getHomeData = unstable_cache(
+  async () => {
+    const supabase = getAnonClient()
 
-  if (featured) q = q.eq('featured', true)
+    // stats + featured + latest 3개를 완전 병렬 처리
+    const [contentsCount, authorData, featuredData, latestData] = await Promise.all([
+      supabase.from('contents').select('id', { count: 'exact', head: true }).eq('status', 'published'),
+      supabase.from('contents').select('author_id').eq('status', 'published'),
+      // JOIN으로 프로필 한 번에 (N+1 제거)
+      supabase
+        .from('contents')
+        .select('id, title, excerpt, category, view_count, like_count, created_at, author_id, cover_image_url, profiles!author_id(name)')
+        .eq('status', 'published')
+        .eq('featured', true)
+        .order('created_at', { ascending: false })
+        .limit(4),
+      supabase
+        .from('contents')
+        .select('id, title, excerpt, category, view_count, like_count, created_at, author_id, cover_image_url, profiles!author_id(name)')
+        .eq('status', 'published')
+        .order('created_at', { ascending: false })
+        .limit(10),
+    ])
 
-  const { data } = await q
-  if (!data || data.length === 0) return []
+    const studentCount = new Set(authorData.data?.map((r) => r.author_id)).size
+    const stats = { contentCount: contentsCount.count ?? 0, studentCount }
 
-  const ids = data.map((c) => c.author_id).filter(Boolean) as string[]
-  const uniqueIds = ids.filter((id, i, arr) => arr.indexOf(id) === i)
-  const profileMap: Record<string, { name: string }> = {}
+    function normalize(data: typeof featuredData.data) {
+      return (data ?? []).map((c) => {
+        const p = Array.isArray(c.profiles) ? c.profiles[0] : c.profiles
+        return {
+          ...c,
+          summary: c.excerpt,
+          cover_image_url: c.cover_image_url ?? null,
+          profiles: (p as { name: string } | null) ?? null,
+        }
+      })
+    }
 
-  if (uniqueIds.length > 0) {
-    const { data: pd } = await supabase.from('profiles').select('id, name').in('id', uniqueIds)
-    ;(pd ?? []).forEach((p) => { profileMap[p.id] = { name: p.name } })
-  }
-
-  return data.map((c) => ({
-    ...c,
-    summary: c.excerpt,
-    cover_image_url: c.cover_image_url ?? null,
-    profiles: profileMap[c.author_id] ?? null,
-  }))
-}
+    return { stats, featured: normalize(featuredData.data), latest: normalize(latestData.data) }
+  },
+  ['home-data'],
+  { revalidate: 60, tags: ['home'] }
+)
 
 export default async function Home() {
-  const supabase = createClient()
-  const [stats, featured, latest] = await Promise.all([
-    getStats(supabase),
-    getContentList(supabase, true, 4),
-    getContentList(supabase, false, 10),
-  ])
+  const { stats, featured, latest } = await getHomeData()
 
   const mainFeatured = featured[0] ?? latest[0] ?? null
   const secondaryFeatured = featured[1] ?? latest[1] ?? null
